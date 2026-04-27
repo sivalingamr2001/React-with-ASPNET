@@ -1,0 +1,1 @@
+D:\New Workspace\React with ASPNET\janatics.client\obj\Release\janatics.client.esproj.CoreCompileInputs.cache

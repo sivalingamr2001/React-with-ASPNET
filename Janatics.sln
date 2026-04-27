@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36414.22 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "janatics.client", "janatics.client\janatics.client.esproj", "{33772530-0351-2B8D-C261-B6D301B313A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Janatics.Server", "Janatics.Server\Janatics.Server.csproj", "{69E8B351-C913-4CAC-8F2D-F6C7CB153A96}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{33772530-0351-2B8D-C261-B6D301B313A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33772530-0351-2B8D-C261-B6D301B313A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33772530-0351-2B8D-C261-B6D301B313A3}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{33772530-0351-2B8D-C261-B6D301B313A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33772530-0351-2B8D-C261-B6D301B313A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33772530-0351-2B8D-C261-B6D301B313A3}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{69E8B351-C913-4CAC-8F2D-F6C7CB153A96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69E8B351-C913-4CAC-8F2D-F6C7CB153A96}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69E8B351-C913-4CAC-8F2D-F6C7CB153A96}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69E8B351-C913-4CAC-8F2D-F6C7CB153A96}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {79A6F80F-85D0-4F5D-8E43-456D53E6CF5B}
+	EndGlobalSection
+EndGlobal

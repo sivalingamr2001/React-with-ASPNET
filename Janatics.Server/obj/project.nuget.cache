@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dgSpecHash": "9CwnDqxhCQY=",
+  "success": true,
+  "projectFilePath": "D:\\New Workspace\\React with ASPNET\\Janatics.Server\\Janatics.Server.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\1409\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.8\\microsoft.aspnetcore.openapi.9.0.8.nupkg.sha512",
+    "C:\\Users\\1409\\.nuget\\packages\\microsoft.aspnetcore.spaproxy\\9.0.15\\microsoft.aspnetcore.spaproxy.9.0.15.nupkg.sha512",
+    "C:\\Users\\1409\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512",
+    "C:\\Users\\1409\\.nuget\\packages\\microsoft.netcore.app.ref\\9.0.15\\microsoft.netcore.app.ref.9.0.15.nupkg.sha512",
+    "C:\\Users\\1409\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\9.0.15\\microsoft.windowsdesktop.app.ref.9.0.15.nupkg.sha512",
+    "C:\\Users\\1409\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\9.0.15\\microsoft.aspnetcore.app.ref.9.0.15.nupkg.sha512",
+    "C:\\Users\\1409\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\9.0.15\\microsoft.netcore.app.host.win-x64.9.0.15.nupkg.sha512"
+  ],
+  "logs": []
+}
