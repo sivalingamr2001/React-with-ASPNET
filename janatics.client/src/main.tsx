@@ -3,20 +3,23 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
 
-import { TooltipProvider } from "./components/ui/tooltip.tsx";
-import { ThemeProvider } from "./context/theme-provider.tsx";
+import AuthProvider from "./context/auth-provider.tsx";
 import "./index.css";
-import AppRouter from "./Router.tsx";
+import { ThemeProvider } from "./context/theme-provider.tsx";
+import { TooltipProvider } from "./components/ui/tooltip.tsx";
+import App from "./App.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter basename="/static">
-      <ThemeProvider>
-        <Toaster position="top-right" richColors />
-        <TooltipProvider>
-          <AppRouter />
-        </TooltipProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <Toaster position="top-right" richColors />
+          <TooltipProvider>
+            <App />
+          </TooltipProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
 );

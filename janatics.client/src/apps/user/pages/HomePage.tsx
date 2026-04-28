@@ -1,19 +1,21 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../../../context/auth-provider";
 import {
   SEED_PROFILES,
   SEED_ENTITIES,
   SEED_COLUMNS,
   DISCOVERED_TABLES,
-} from "../components/HomePage/data";
+} from "../../components/HomePage/data";
 import {
   ProviderBadge,
   StatusDot,
   Tag,
   Modal,
-} from "../components/HomePage/ui";
-import { ProfileForm } from "../components/HomePage/ProfileForm";
-import { EntityForm } from "../components/HomePage/EntityForm";
-import { ColumnPanel } from "../components/HomePage/ColumnPanel";
+} from "../../components/HomePage/ui";
+import { ProfileForm } from "../../components/HomePage/ProfileForm";
+import { EntityForm } from "../../components/HomePage/EntityForm";
+import { ColumnPanel } from "../../components/HomePage/ColumnPanel";
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function RegistryManager() {
   const [profiles, setProfiles] = useState(SEED_PROFILES);
@@ -25,6 +27,8 @@ export default function RegistryManager() {
   const [discovering, setDiscovering] = useState(false);
   const [discovered, setDiscovered] = useState([]);
   const [expandedEntity, setExpandedEntity] = useState(null);
+
+  const { user } = useAuth();
 
   const closeModal = () => setModal(null);
 
@@ -251,8 +255,13 @@ export default function RegistryManager() {
               border: "1px solid #1d4ed8",
             }}
           >
-            ADMIN
+            {user?.role ? user.role.toUpperCase() : "GUEST"}
           </span>
+          {user?.role === "Admin" && (
+            <Link to="/admin/querybuilder" style={{ marginLeft: 10, fontSize: 12, color: "#93c5fd", textDecoration: "none", fontWeight: 700 }}>
+              Query Builder
+            </Link>
+          )}
         </div>
         <div style={{ flex: 1 }} />
         <div style={{ fontSize: 11, color: "#475569" }}>
@@ -288,21 +297,23 @@ export default function RegistryManager() {
               >
                 DB Profiles
               </span>
-              <button
-                onClick={() => setModal({ type: "addProfile" })}
-                style={{
-                  background: "#1e3a8a",
-                  color: "#93c5fd",
-                  border: "none",
-                  borderRadius: 5,
-                  padding: "3px 9px",
-                  fontSize: 11,
-                  cursor: "pointer",
-                  fontWeight: 700,
-                }}
-              >
-                + New
-              </button>
+              {user?.role === "Admin" && (
+                <button
+                  onClick={() => setModal({ type: "addProfile" })}
+                  style={{
+                    background: "#1e3a8a",
+                    color: "#93c5fd",
+                    border: "none",
+                    borderRadius: 5,
+                    padding: "3px 9px",
+                    fontSize: 11,
+                    cursor: "pointer",
+                    fontWeight: 700,
+                  }}
+                >
+                  + New
+                </button>
+              )}
             </div>
           </div>
 
@@ -399,29 +410,33 @@ export default function RegistryManager() {
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                  <button
-                    style={S.btn("success")}
-                    onClick={() => testConnection(activeProf.id)}
-                    disabled={testingId === activeProf.id}
-                  >
-                    {testingId === activeProf.id
-                      ? "⏳ Testing…"
-                      : "⚡ Test Connection"}
-                  </button>
-                  <button
-                    style={S.btn("ghost")}
-                    onClick={() =>
-                      setModal({ type: "editProfile", data: activeProf })
-                    }
-                  >
-                    Edit
-                  </button>
-                  <button
-                    style={S.btn("danger")}
-                    onClick={() => deleteProfile(activeProf.id)}
-                  >
-                    Delete
-                  </button>
+                  {user?.role === "Admin" && (
+                    <>
+                      <button
+                        style={S.btn("success")}
+                        onClick={() => testConnection(activeProf.id)}
+                        disabled={testingId === activeProf.id}
+                      >
+                        {testingId === activeProf.id
+                          ? "⏳ Testing…"
+                          : "⚡ Test Connection"}
+                      </button>
+                      <button
+                        style={S.btn("ghost")}
+                        onClick={() =>
+                          setModal({ type: "editProfile", data: activeProf })
+                        }
+                      >
+                        Edit
+                      </button>
+                      <button
+                        style={S.btn("danger")}
+                        onClick={() => deleteProfile(activeProf.id)}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -463,25 +478,29 @@ export default function RegistryManager() {
                     onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
-                <button
-                  style={S.btn()}
-                  onClick={discoverTables}
-                  disabled={discovering}
-                >
-                  {discovering ? "⏳ Discovering…" : "🔭 Auto-Discover"}
-                </button>
-                <button
-                  style={S.btn("primary")}
-                  onClick={() =>
-                    setModal({ type: "addEntity", profileId: activeProfile })
-                  }
-                >
-                  + Add Entity
-                </button>
+                {user?.role === "Admin" && (
+                  <>
+                    <button
+                      style={S.btn()}
+                      onClick={discoverTables}
+                      disabled={discovering}
+                    >
+                      {discovering ? "⏳ Discovering…" : "🔭 Auto-Discover"}
+                    </button>
+                    <button
+                      style={S.btn("primary")}
+                      onClick={() =>
+                        setModal({ type: "addEntity", profileId: activeProfile })
+                      }
+                    >
+                      + Add Entity
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* Discovered tables banner */}
-              {discovered.length > 0 && (
+              {user?.role === "Admin" && discovered.length > 0 && (
                 <div
                   style={{
                     background: "#0c1a0a",
@@ -674,24 +693,28 @@ export default function RegistryManager() {
                         >
                           Columns
                         </button>
-                        <button
-                          style={S.btn("ghost")}
-                          onClick={() =>
-                            setModal({
-                              type: "editEntity",
-                              profileId: activeProfile,
-                              data: entity,
-                            })
-                          }
-                        >
-                          Edit
-                        </button>
-                        <button
-                          style={S.btn("danger")}
-                          onClick={() => deleteEntity(activeProfile, entity.id)}
-                        >
-                          ×
-                        </button>
+                        {user?.role === "Admin" && (
+                          <>
+                            <button
+                              style={S.btn("ghost")}
+                              onClick={() =>
+                                setModal({
+                                  type: "editEntity",
+                                  profileId: activeProfile,
+                                  data: entity,
+                                })
+                              }
+                            >
+                              Edit
+                            </button>
+                            <button
+                              style={S.btn("danger")}
+                              onClick={() => deleteEntity(activeProfile, entity.id)}
+                            >
+                              ×
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
 

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Janatics.Server")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7d293c7038af1792ab91bb3040dbbfcd6c010d62")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+16f8f0b0af09527d37cd96113a8b3339d5bf589f")]
 [assembly: System.Reflection.AssemblyProductAttribute("Janatics.Server")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Janatics.Server")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

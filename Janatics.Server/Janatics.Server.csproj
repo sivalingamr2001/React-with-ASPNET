@@ -14,12 +14,14 @@
     <PackageReference Include="Microsoft.AspNetCore.SpaProxy">
       <Version>9.*-*</Version>
     </PackageReference>
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.34.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\janatics.client\janatics.client.esproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\Janatics.DataEngine\Janatics.DataEngine.csproj" />
   </ItemGroup>
 
 </Project>
