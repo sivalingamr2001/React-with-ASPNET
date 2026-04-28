@@ -499,25 +499,22 @@ $RECYCLE.BIN/
 Artifact/
 
 # Frontend (React/Vite)
-client/node_modules/
-client/dist/
-client/build/
-client/.env
+janatics.client/node_modules/
+janatics.client/dist/
+janatics.client/build/
+janatics.client/.env
+janatics.client/obj/
 
 # Backend explicit (optional safety)
-Server/bin/
-Server/obj/
+Janatics.Server/bin/
+Janatics.Server/obj/
 
 # Logs
 *.log
 logs/
 
 .idea
-Artifact/
 
 [Oo]bj/
 [Bb]in/
 *.cache
-Janatics.Server/obj/Debug/net9.0/Janatics.Server.AssemblyInfo.cs
-Janatics.Server/obj/Debug/net9.0/Janatics.Server.AssemblyInfoInputs.cache
-Janatics.Server/obj/Debug/net9.0/Janatics.Server.assets.cache
