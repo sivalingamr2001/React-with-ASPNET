@@ -513,9 +513,5 @@ logs/
 .idea
 Artifact/
 
-
-Janatics.Server.obj/
-Janatics.Server/obj/Janatics.Server.csproj.nuget.dgspec.json
-Janatics.Server/obj/Janatics.Server.csproj.nuget.dgspec.json
-Janatics.Server/obj/Janatics.Server.csproj.nuget.g.props
-Janatics.Server/obj/project.nuget.cache
+[Oo]bj/
+[Bb]in/
