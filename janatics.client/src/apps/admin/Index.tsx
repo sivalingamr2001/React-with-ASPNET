@@ -1,7 +1,11 @@
-import React from "react";
+import { HashRouter } from "react-router-dom";
 
-function AdminPortal() {
-  return <div>AdminPortal</div>;
+import AdminShell from "./shell";
+
+export default function AdminPortal() {
+  return (
+    <HashRouter>
+      <AdminShell />
+    </HashRouter>
+  );
 }
-
-export default AdminPortal;

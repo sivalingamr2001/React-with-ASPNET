@@ -49,7 +49,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     if (password === "password123") {
-      const isMockAdmin = username === "user";
+      const isMockAdmin = username === "admin";
 
       const mockData = {
         token: "mock-jwt-token-xyz",

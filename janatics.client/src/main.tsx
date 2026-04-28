@@ -5,14 +5,17 @@ import "./index.css";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { Toaster } from "./components/ui/sonner";
 import AuthProvider from "./context/auth-provider";
+import { ThemeProvider } from "./context/theme-provider";
 
 createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster position="top-center" richColors />
-        <App />
-      </TooltipProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <TooltipProvider delayDuration={0}>
+          <Toaster position="top-center" richColors />
+          <App />
+        </TooltipProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </React.StrictMode>,
 );

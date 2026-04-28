@@ -41,3 +41,8 @@ Structure every component in this exact order:
 
 ## APPLICATION
 Apply these rules to the component below and output the refactored files with their full folder structure.
+
+## Project Context
+Refer this document for overall feature
+[text](../Docs/Janatics_DataEngine_SystemDesign.docx)
+[text](../Docs/Janatics_DataEngine_Complete.pdf)
