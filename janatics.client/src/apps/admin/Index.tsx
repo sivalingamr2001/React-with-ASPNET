@@ -1,9 +1,7 @@
-import React from 'react'
+import React from "react";
 
 function AdminPortal() {
-  return (
-    <div>AdminPortal</div>
-  )
+  return <div>AdminPortal</div>;
 }
 
-export default AdminPortal
+export default AdminPortal;

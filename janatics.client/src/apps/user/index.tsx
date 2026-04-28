@@ -1,4 +1,3 @@
-
 function UserPortal() {
   return <div>UserPortal</div>;
 }

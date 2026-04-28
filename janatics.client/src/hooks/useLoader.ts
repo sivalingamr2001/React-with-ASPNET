@@ -1,52 +1,64 @@
-import React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-export type LoaderKey = string | number | symbol;
+/** Summary about this hook */
+export type LoaderResult<T> =
+  | { ok: true; data: T; error: null }
+  | { ok: false; data: null; error: unknown };
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Public types
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type LoaderKey = string;
 
 export interface UseLoaderOptions {
   /**
-   * Minimum time (ms) the loader stays visible so it never flashes
-   * @default 300
+   * Minimum time (ms) the loader stays visible — eliminates flash-of-loader.
+   * Runs in PARALLEL with the async work via Promise.all, not sequentially.
+   * @default 3000
    */
   minDuration?: number;
+
   /**
-   * When tru, a rejected promise is re-thrown after the minimum
-   * duration has elapsed. Set to false to swallow the errors silently.
+   * true  → withLoader throws on rejection (classic async/await pattern).
+   * false → withLoader returns LoaderResult<T> — never throws; inspect .ok.
    * @default true
    */
-  rethrowErrors?: boolean;
+  rethrowError?: boolean;
 }
 
 export interface UseLoaderReturn {
-  /** True while any tracked promise (or the minimum timer) is pending. */
+  /** True while any tracked session (or its minimum timer) is still pending. */
   loading: boolean;
 
-  /**
-   * Wraps an async factory in the loader lifecycle
-   *
-   * @example
-   * const data = await withLoader(() => fetchData());
-   * const data = await withLoader(( => fetchUsers(), "users-list"));
-   * */
-  withLoader: <T>(fn: () => Promise<T>, key?: LoaderKey) => Promise<T>;
+  /** How many independent sessions are active right now. */
+  activeCount: number;
 
   /**
-   * Imperatively start the loader. Useful for non-promise flows
-   * Returns a `stop` function that ends this particular session.
+   * Wraps an async factory in the loader lifecycle.
+   *
+   * rethrowError = true  (default) → returns T; throws on error.
+   * rethrowError = false            → returns LoaderResult<T>; never throws.
+   */
+  withLoader: <T>(
+    fn: () => Promise<T>,
+    key?: LoaderKey,
+  ) => Promise<T | LoaderResult<T>>;
+
+  /**
+   * Imperative API for non-promise flows (file uploads, WebSockets, etc.).
+   * Returns an idempotent stop() function.
    *
    * @example
-   * const stop = start("upload");
-   * // ... do work ...
-   * stop();
+   * const stop = start("ws-session");
+   * socket.on("close", stop);
    */
   start: (key?: LoaderKey) => () => void;
-
-  /** How many independent loader sessions are active right now */
-  activeCount: number;
 }
 
-//-----------------------------------------------------------------------------------------------------
-// Hook
-//-----------------------------------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
+//  useLoader
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * `useLoader` - A React hook to manage loading orchestrator state for async operations.
@@ -75,72 +87,87 @@ export interface UseLoaderReturn {
  */
 
 export function useLoader(options: UseLoaderOptions = {}): UseLoaderReturn {
-  const { minDuration = 3000, rethrowErrors = true } = options;
+  // ── Fix #3: stable options ref ───────────────────────────────────────────
+  const optionsRef = useRef<UseLoaderOptions>(options);
+  useEffect(() => {
+    optionsRef.current = options;
+    // No dep array — runs every render, but is a ref assignment (no re-render).
+  });
 
-  //Ref tracks the true count synchronously (avoids stale-closure bugs).
-  // State drives re-renders
-  const countRef = React.useRef(0);
-  const [activeCount, setActiveCount] = React.useState(0);
-
-  // Sync helper - increment or decrement the ref AND flush to state.
-  const mutate = React.useCallback((delta: 1 | -1) => {
-    countRef.current += delta;
-    setActiveCount(countRef.current);
+  // ── Fix #1: mount guard ──────────────────────────────────────────────────
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
-  // ---- Imperative API -----------------------------------------------------------------------------------
-  const start = React.useCallback(
+  // ── Reference counter (sync) + state (drives re-renders) ─────────────────
+  const countRef = useRef(0);
+  const [activeCount, setActiveCount] = useState(0);
+
+  const mutate = useCallback((delta: 1 | -1) => {
+    countRef.current = Math.max(0, countRef.current + delta);
+
+    if (isMountedRef.current) {
+      setActiveCount(() => countRef.current);
+    }
+  }, []);
+
+  // ── Imperative API ────────────────────────────────────────────────────────
+  const start = useCallback(
     (_key?: LoaderKey): (() => void) => {
       mutate(1);
       let stopped = false;
 
-      const stop = () => {
+      return () => {
         if (stopped) return;
         stopped = true;
         mutate(-1);
       };
-
-      return stop;
     },
     [mutate],
   );
 
-  //---- Promise API --------------------------------------------------------------------------------------
-  const withLoader = React.useCallback(
-    async <T>(fn: () => Promise<T>, _key?: LoaderKey): Promise<T> => {
-      mutate(1);
+  // ── Promise API ───────────────────────────────────────────────────────────
+  const withLoader = useCallback(
+    async <T>(
+      fn: () => Promise<T>,
+      _key?: LoaderKey,
+    ): Promise<T | LoaderResult<T>> => {
+      const { minDuration = 3000, rethrowError = true } = optionsRef.current;
 
-      // Start the minimum-duration timer immediately so it runs in
-      // parallel with the async work - NOT sequentially after it.
+      mutate(1);
       const minTimer = new Promise<void>((resolve) =>
         setTimeout(resolve, minDuration),
       );
 
-      let result: T;
-      let caughtError: unknown;
-      let hasError = false;
-
       try {
-        result = await fn();
-      } catch (err) {
-        hasError = true;
-        caughtError = err;
+        const [result] = await Promise.all([fn(), minTimer]);
+
+        if (!rethrowError) {
+          return {
+            ok: true,
+            data: result,
+            error: null,
+          } satisfies LoaderResult<T>;
+        }
+
+        return result;
+      } catch (error) {
+        await minTimer;
+
+        if (!rethrowError) {
+          return { ok: false, data: null, error } satisfies LoaderResult<T>;
+        }
+
+        throw error;
+      } finally {
+        mutate(-1);
       }
-
-      //Always honour the minimum duration, even on rejection,
-      // so the spinner never vanishes in under `minduration` ms.
-      await minTimer;
-
-      mutate(-1);
-
-      if (hasError) {
-        if (rethrowErrors) throw caughtError;
-        return undefined as unknown as T;
-      }
-
-      return result!;
     },
-    [mutate, minDuration, rethrowErrors],
+    [mutate],
   );
 
   return {

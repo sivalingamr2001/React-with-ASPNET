@@ -28,8 +28,12 @@ export default function QueryBuilder() {
       ) : (
         <div>
           {profiles.map((p) => (
-            <div key={p.id} style={{ padding: 8, borderBottom: "1px solid #e6eef8" }}>
-              <strong>{p.name}</strong> <span style={{ color: "#64748b" }}>{p.provider}</span>
+            <div
+              key={p.id}
+              style={{ padding: 8, borderBottom: "1px solid #e6eef8" }}
+            >
+              <strong>{p.name}</strong>{" "}
+              <span style={{ color: "#64748b" }}>{p.provider}</span>
             </div>
           ))}
         </div>
