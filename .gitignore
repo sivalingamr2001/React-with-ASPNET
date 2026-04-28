@@ -16,6 +16,8 @@
 # Mono auto generated files
 mono_crash.*
 
+*server
+
 # Build results
 tools/
 [Dd]ebug/
@@ -515,3 +517,7 @@ Artifact/
 
 [Oo]bj/
 [Bb]in/
+*.cache
+Janatics.Server/obj/Debug/net9.0/Janatics.Server.AssemblyInfo.cs
+Janatics.Server/obj/Debug/net9.0/Janatics.Server.AssemblyInfoInputs.cache
+Janatics.Server/obj/Debug/net9.0/Janatics.Server.assets.cache
