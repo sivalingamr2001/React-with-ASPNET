@@ -24,7 +24,7 @@ export default function SidebarPanel({
       animate={{ width: isCollapsed ? 92 : 288 }}
       className="h-screen p-3"
     >
-      <div className="flex h-full flex-col rounded-[30px] border border-white/60 bg-card/85 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.45)] backdrop-blur-xl">
+      <div className="flex h-full flex-col rounded-[30px] theme-sidebar p-4 backdrop-blur-xl">
         <button
           className="mb-6 flex items-center justify-between rounded-2xl bg-secondary/70 px-3 py-3 text-left"
           onClick={onToggleCollapse}
