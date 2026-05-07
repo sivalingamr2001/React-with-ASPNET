@@ -518,3 +518,17 @@ logs/
 [Oo]bj/
 [Bb]in/
 *.cache
+
+**/.git
+**/.gitignore
+**/bin/
+**/obj/
+**/*.user
+**/*.suo
+**/node_modules/
+**/TestResults/
+**/.vs/
+**/coverage/
+**/*.md
+**/Dockerfile*
+**/docker-compose*

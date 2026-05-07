@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/JanaticsApi.API/JanaticsApi.API.csproj" />
+    <Project Path="src/JanaticsApi.Application/JanaticsApi.Application.csproj" />
+    <Project Path="src/JanaticsApi.Domain/JanaticsApi.Domain.csproj" />
+    <Project Path="src/JanaticsApi.Infrastructure/JanaticsApi.Infrastructure.csproj" />
+    <Project Path="src/JanaticsApi.Shared/JanaticsApi.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/JanaticsApi.ArchitectureTests/JanaticsApi.ArchitectureTests.csproj" />
+    <Project Path="tests/JanaticsApi.IntegrationTests/JanaticsApi.IntegrationTests.csproj" />
+    <Project Path="tests/JanaticsApi.UnitTests/JanaticsApi.UnitTests.csproj" />
+  </Folder>
+</Solution>
