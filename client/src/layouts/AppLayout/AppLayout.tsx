@@ -13,8 +13,8 @@ export const AppLayout = () => {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
 
-      tl.from(".sidebar-container", { x: -100, opacity: 0, duration: 1.2 })
-        .from(".header-container", { y: -50, opacity: 0, duration: 1 }, "-=0.8")
+      tl.from(".header-container", { y: -100, opacity: 0, duration: 1.2 })
+        .from(".sidebar-container", { x: -50, opacity: 0, duration: 1 }, "-=0.8")
         .from(".main-content", { y: 20, opacity: 0, duration: 0.8 }, "-=0.6");
     });
 
@@ -45,8 +45,8 @@ export const AppLayout = () => {
           <Sidebar />
         </aside>
 
-        <main 
-          ref={mainRef} 
+        <main
+          ref={mainRef}
           className="main-content flex-1 p-6 lg:p-10"
         >
 

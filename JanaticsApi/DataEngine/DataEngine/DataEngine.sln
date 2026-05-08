@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36414.22
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataEngine", "DataEngine.csproj", "{F03571A3-9492-42F9-985E-D8D13D46C20C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataEngine.ConsoleApp", "..\DataEngine.Console\DataEngine.ConsoleApp.csproj", "{F242B792-6ED5-4E14-B64C-27C2534A742E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F03571A3-9492-42F9-985E-D8D13D46C20C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F03571A3-9492-42F9-985E-D8D13D46C20C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F03571A3-9492-42F9-985E-D8D13D46C20C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F03571A3-9492-42F9-985E-D8D13D46C20C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F242B792-6ED5-4E14-B64C-27C2534A742E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F242B792-6ED5-4E14-B64C-27C2534A742E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F242B792-6ED5-4E14-B64C-27C2534A742E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F242B792-6ED5-4E14-B64C-27C2534A742E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F12FB966-AE57-43D8-804A-BDBB0E0911D0}
+	EndGlobalSection
+EndGlobal
