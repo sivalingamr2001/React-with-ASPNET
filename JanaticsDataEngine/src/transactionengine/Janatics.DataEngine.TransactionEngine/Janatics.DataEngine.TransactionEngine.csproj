@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\core\Janatics.DataEngine.Domain\Janatics.DataEngine.Domain.csproj" />
+    <ProjectReference Include="..\..\core\Janatics.DataEngine.Contracts\Janatics.DataEngine.Contracts.csproj" />
+    <ProjectReference Include="..\..\providers\Janatics.DataEngine.Providers.Abstractions\Janatics.DataEngine.Providers.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

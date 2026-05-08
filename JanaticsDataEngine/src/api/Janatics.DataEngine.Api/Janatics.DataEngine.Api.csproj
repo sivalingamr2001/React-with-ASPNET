@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\..\core\Janatics.DataEngine.Contracts\Janatics.DataEngine.Contracts.csproj" />
+    <ProjectReference Include="..\..\core\Janatics.DataEngine.Domain\Janatics.DataEngine.Domain.csproj" />
+    <ProjectReference Include="..\..\infrastructure\Janatics.DataEngine.Infrastructure\Janatics.DataEngine.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\providers\Janatics.DataEngine.Providers.Abstractions\Janatics.DataEngine.Providers.Abstractions.csproj" />
+    <ProjectReference Include="..\..\queryengine\Janatics.DataEngine.QueryEngine\Janatics.DataEngine.QueryEngine.csproj" />
+    <ProjectReference Include="..\..\security\Janatics.DataEngine.Security\Janatics.DataEngine.Security.csproj" />
+    <ProjectReference Include="..\..\transactionengine\Janatics.DataEngine.TransactionEngine\Janatics.DataEngine.TransactionEngine.csproj" />
+  </ItemGroup>
+</Project>
