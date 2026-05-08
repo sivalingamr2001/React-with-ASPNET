@@ -1,0 +1,25 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/api/">
+    <Project Path="src/api/Janatics.DataEngine.Api/Janatics.DataEngine.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/core/">
+    <Project Path="src/core/Janatics.DataEngine.Contracts/Janatics.DataEngine.Contracts.csproj" />
+    <Project Path="src/core/Janatics.DataEngine.Domain/Janatics.DataEngine.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/infrastructure/">
+    <Project Path="src/infrastructure/Janatics.DataEngine.Infrastructure/Janatics.DataEngine.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/providers/">
+    <Project Path="src/providers/Janatics.DataEngine.Providers.Abstractions/Janatics.DataEngine.Providers.Abstractions.csproj" />
+  </Folder>
+  <Folder Name="/src/queryengine/">
+    <Project Path="src/queryengine/Janatics.DataEngine.QueryEngine/Janatics.DataEngine.QueryEngine.csproj" />
+  </Folder>
+  <Folder Name="/src/security/">
+    <Project Path="src/security/Janatics.DataEngine.Security/Janatics.DataEngine.Security.csproj" />
+  </Folder>
+  <Folder Name="/src/transactionengine/">
+    <Project Path="src/transactionengine/Janatics.DataEngine.TransactionEngine/Janatics.DataEngine.TransactionEngine.csproj" />
+  </Folder>
+</Solution>

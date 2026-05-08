@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\core\Janatics.DataEngine.Domain\Janatics.DataEngine.Domain.csproj" />
+  </ItemGroup>
+</Project>
