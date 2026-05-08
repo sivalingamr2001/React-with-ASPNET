@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DataEngine.ConsoleApp/DataEngine.ConsoleApp.csproj" />
+    <Project Path="src/Janatics.DataEngine/Janatics.DataEngine.csproj" />
+  </Folder>
+</Solution>
