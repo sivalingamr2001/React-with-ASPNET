@@ -1,0 +1,6 @@
+@Janatics.DataEngine.Api_HostAddress = http://localhost:5212
+
+GET {{Janatics.DataEngine.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
