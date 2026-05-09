@@ -1,12 +1,14 @@
-using Janatics.DataEngine.Abstractions;
-using Janatics.DataEngine.AuditService.Interface;
-using Janatics.DataEngine.Models.Audit;
+using Janatics.DataEngine.ProcessService.Abstractions;
+using Janatics.DataEngine.ProcessService.AuditService.Interface;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Models.Audit;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using System.Data;
+using System.Data.Common;
 using System.Text.RegularExpressions;
 
-namespace Janatics.DataEngine.Core.Auditing
+namespace Janatics.DataEngine.ProcessService.Core.Auditing
 {
     /// <summary>
     /// Service for coordinating audit operations.
@@ -18,6 +20,7 @@ namespace Janatics.DataEngine.Core.Auditing
         private readonly IAuditQueue _auditQueue;
         private readonly AuditDiffBuilder _diffBuilder;
         private readonly ILogger<AuditService> _logger;
+        private readonly DatabaseConfig? _databaseConfig;
 
         /// <summary>
         /// Per-async-context cache of audit jobs to be written after transaction commit (like triggers cache).
@@ -33,11 +36,13 @@ namespace Janatics.DataEngine.Core.Auditing
         public AuditService(
             IAuditQueue auditQueue,
             AuditDiffBuilder diffBuilder,
-            ILogger<AuditService> logger)
+            ILogger<AuditService> logger,
+            DatabaseConfig? databaseConfig = null)
         {
             _auditQueue = auditQueue;
             _diffBuilder = diffBuilder;
             _logger = logger;
+            _databaseConfig = databaseConfig;
         }
 
         public async Task<bool> TryAuditAsync(
@@ -251,15 +256,40 @@ namespace Janatics.DataEngine.Core.Auditing
 
         /// <summary>
         /// Flushes the given list of audit jobs (or current cache if jobs is null). Use the list returned from PrepareAuditCacheForRequest() so flush is reliable after commit.
+        /// Note: Currently only supports PostgreSQL for synchronous flush. Other databases will queue for async processing.
         /// </summary>
         public void FlushAuditLogsFireAndForget(string connectionString, List<AuditJob>? jobs)
         {
-            var toUse = jobs ?? _auditLogCache.Value;
-            if (toUse == null || toUse.Count == 0)
+            // Check if we're using a non-PostgreSQL provider - if so, queue for async processing via outbox
+            if (_databaseConfig != null && _databaseConfig.Provider != DatabaseProvider.PostgreSQL)
+            {
+                var toUse = jobs ?? _auditLogCache.Value;
+                if (toUse == null || toUse.Count == 0)
+                    return;
+
+                _logger.LogInformation(
+                    "Audit synchronous flush skipped for non-PostgreSQL database. {Count} record(s) will be processed via outbox service.",
+                    toUse.Count);
+
+                // Queue jobs for async processing
+                foreach (var job in toUse)
+                {
+                    _ = _auditQueue.TryEnqueue(job);
+                }
+
+                // Clear cache if we're using the default cache
+                if (jobs == null)
+                    _auditLogCache.Value = null;
+
+                return;
+            }
+
+            var jobs_to_flush = jobs ?? _auditLogCache.Value;
+            if (jobs_to_flush == null || jobs_to_flush.Count == 0)
                 return;
 
             // Snapshot and clear only if we're using the cache (so same context can be reused)
-            var toFlush = new List<AuditJob>(toUse);
+            var toFlush = new List<AuditJob>(jobs_to_flush);
             if (jobs == null)
                 _auditLogCache.Value = null;
 

@@ -1,20 +1,21 @@
-using Janatics.DataEngine.Core.Auditing;
-using Janatics.DataEngine.Infrastructure.Models;
-using Janatics.DataEngine.Models.Audit;
+using Janatics.DataEngine.ProcessService.Core.Auditing;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Models.Audit;
 using Microsoft.Extensions.Logging;
-using Npgsql;
 using System.Data;
+using System.Data.Common;
 
-namespace Janatics.DataEngine.Infrastructure.BackgroundJobs
+namespace Janatics.DataEngine.ProcessService.Infrastructure.BackgroundJobs
 {
     /// <summary>
-    /// Writes audit records to PostgreSQL using ADO.NET
+    /// Writes audit records to the configured database using ADO.NET
     /// </summary>
     public class AuditWriter(
         DatabaseConfig databaseConfig,
         ILogger<AuditWriter> logger,
         AuditDiffBuilder diffBuilder)
     {
+        private readonly DatabaseConfig _databaseConfig = databaseConfig;
         private readonly string _connectionString = databaseConfig.ConnectionString
                 ?? throw new InvalidOperationException("Database connection string not found");
         private readonly ILogger<AuditWriter> _logger = logger;
@@ -51,7 +52,7 @@ namespace Janatics.DataEngine.Infrastructure.BackgroundJobs
                     job.TransactionId
                 );
 
-                await using var connection = new NpgsqlConnection(_connectionString);
+                await using var connection = CreateConnection();
                 await connection.OpenAsync(cancellationToken);
 
                 _logger.LogInformation(
@@ -60,26 +61,30 @@ namespace Janatics.DataEngine.Infrastructure.BackgroundJobs
                     job.TransactionId
                 );
 
-                const string sql = @"
-                    INSERT INTO public.auditlog 
-                        (transactiontable, transactionid, modifiedby, operation, changelog, createdon)
-                    VALUES 
-                        (@transactiontable, @transactionid, @modifiedby, @operation, @changelog::jsonb, @createdon)";
+                var sql = _databaseConfig.Provider switch
+                {
+                    DatabaseProvider.PostgreSQL => @"
+                        INSERT INTO public.auditlog 
+                            (transactiontable, transactionid, modifiedby, operation, changelog, createdon)
+                        VALUES 
+                            (@transactiontable, @transactionid, @modifiedby, @operation, @changelog::jsonb, @createdon)",
+                    DatabaseProvider.Sqlite => @"
+                        INSERT INTO auditlog 
+                            (transactiontable, transactionid, modifiedby, operation, changelog, createdon)
+                        VALUES 
+                            (@transactiontable, @transactionid, @modifiedby, @operation, @changelog, @createdon)",
+                    _ => throw new NotSupportedException($"Database provider '{_databaseConfig.Provider}' is not supported for audit.")
+                };
 
-                await using var command = new NpgsqlCommand(sql, connection);
+                await using var command = connection.CreateCommand();
+                command.CommandText = sql;
                 
-                command.Parameters.Add(new NpgsqlParameter("@transactiontable", DbType.String) 
-                    { Value = job.TransactionTable });
-                command.Parameters.Add(new NpgsqlParameter("@transactionid", DbType.Guid) 
-                    { Value = job.TransactionId });
-                command.Parameters.Add(new NpgsqlParameter("@modifiedby", DbType.String) 
-                    { Value = job.ModifiedBy });
-                command.Parameters.Add(new NpgsqlParameter("@operation", DbType.String) 
-                    { Value = job.Operation.ToString() });
-                command.Parameters.Add(new NpgsqlParameter("@changelog", DbType.String) 
-                    { Value = changeLogJson });
-                command.Parameters.Add(new NpgsqlParameter("@createdon", DbType.DateTimeOffset) 
-                    { Value = job.TimestampUtc });
+                AddParameter(command, "@transactiontable", DbType.String, job.TransactionTable);
+                AddParameter(command, "@transactionid", DbType.String, job.TransactionId.ToString());
+                AddParameter(command, "@modifiedby", DbType.String, job.ModifiedBy);
+                AddParameter(command, "@operation", DbType.String, job.Operation.ToString());
+                AddParameter(command, "@changelog", DbType.String, changeLogJson);
+                AddParameter(command, "@createdon", DbType.DateTimeOffset, job.TimestampUtc);
 
                 var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
 
@@ -113,5 +118,28 @@ namespace Janatics.DataEngine.Infrastructure.BackgroundJobs
                 );
             }
         }
+
+        private DbConnection CreateConnection()
+        {
+            return _databaseConfig.Provider switch
+            {
+                DatabaseProvider.PostgreSQL => new Npgsql.NpgsqlConnection(_connectionString),
+                DatabaseProvider.Sqlite => new Microsoft.Data.Sqlite.SqliteConnection(_connectionString),
+                DatabaseProvider.SqlServer => new Microsoft.Data.SqlClient.SqlConnection(_connectionString),
+                DatabaseProvider.MySQL => new MySql.Data.MySqlClient.MySqlConnection(_connectionString),
+                DatabaseProvider.Oracle => new Oracle.ManagedDataAccess.Client.OracleConnection(_connectionString),
+                _ => throw new NotSupportedException($"Database provider '{_databaseConfig.Provider}' is not supported.")
+            };
+        }
+
+        private static void AddParameter(DbCommand cmd, string parameterName, DbType dbType, object? value)
+        {
+            var parameter = cmd.CreateParameter();
+            parameter.ParameterName = parameterName;
+            parameter.DbType = dbType;
+            parameter.Value = value ?? DBNull.Value;
+            cmd.Parameters.Add(parameter);
+        }
     }
 }
+

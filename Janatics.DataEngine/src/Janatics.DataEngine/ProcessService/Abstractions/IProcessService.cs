@@ -1,6 +1,6 @@
-using Janatics.DataEngine.Models.RequestModels;
+using Janatics.DataEngine.ProcessService.Models.RequestModels;
 
-namespace Janatics.DataEngine.Abstractions;
+namespace Janatics.DataEngine.ProcessService.Abstractions;
 
 public interface IProcessService
 {

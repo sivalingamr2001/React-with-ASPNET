@@ -1,9 +1,9 @@
-using Janatics.DataEngine.Abstractions;
-using Janatics.DataEngine.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Abstractions;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
 using Microsoft.Extensions.Logging;
 using System.Data;
 
-namespace Janatics.DataEngine.Infrastructure.Persistence;
+namespace Janatics.DataEngine.ProcessService.Infrastructure.Persistence;
 
 /// <summary>
 /// Base repository class that provides connection sharing support and common database operations

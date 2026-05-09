@@ -1,8 +1,8 @@
-using Janatics.DataEngine.Abstractions;
-using Janatics.DataEngine.Infrastructure.Models;
-using Janatics.DataEngine.Models.Metadata;
+using Janatics.DataEngine.ProcessService.Abstractions;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Models.Metadata;
 
-namespace Janatics.DataEngine.Infrastructure.Providers;
+namespace Janatics.DataEngine.ProcessService.Infrastructure.Providers;
 
 public sealed class ProviderCapabilityRegistry : IProviderCapabilityRegistry
 {

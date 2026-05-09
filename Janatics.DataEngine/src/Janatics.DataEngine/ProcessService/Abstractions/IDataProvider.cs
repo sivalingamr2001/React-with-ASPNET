@@ -1,7 +1,7 @@
-﻿using Npgsql;
-using System.Data;
+﻿using System.Data;
+using System.Data.Common;
 
-namespace Janatics.DataEngine.Core.Auditing;
+namespace Janatics.DataEngine.ProcessService.Core.Auditing;
 
 public interface IDataProvider
 {
@@ -15,6 +15,6 @@ public interface IDataProvider
     Task<int> ExecuteDeleteAsync(string tableName, Dictionary<string, object> whereConditions, IDbTransaction transaction);
     string GetParameterPlaceholder(string parameterName);
     string FormatTableName(string tableName);
-    Task<int> ExecuteNonQueryAsync(string sql, NpgsqlCommand command);
+    Task<int> ExecuteNonQueryAsync(string sql, DbCommand command);
     Task<int> BulkInsertAsync(string tableName, DataTable dataTable, IDbTransaction transaction);
 }

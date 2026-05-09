@@ -1,16 +1,16 @@
-﻿using Janatics.DataEngine.Abstractions;
-using Janatics.DataEngine.Core.Mapping;
-using Janatics.DataEngine.FieldMapper.Model;
-using Janatics.DataEngine.Infrastructure.Models;
-using Janatics.DataEngine.Models.Audit;
-using Janatics.DataEngine.Models.Execution;
-using Janatics.DataEngine.Models.Metadata;
-using Janatics.DataEngine.Models.RequestModels;
+﻿using Janatics.DataEngine.ProcessService.Abstractions;
+using Janatics.DataEngine.ProcessService.Core.Mapping;
+using Janatics.DataEngine.ProcessService.FieldMapper.Model;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Models.Audit;
+using Janatics.DataEngine.ProcessService.Models.Execution;
+using Janatics.DataEngine.ProcessService.Models.Metadata;
+using Janatics.DataEngine.ProcessService.Models.RequestModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Data;
 
-namespace Janatics.DataEngine.Core.Processing;
+namespace Janatics.DataEngine.ProcessService.Core.Processing;
 
 public sealed class TriggerEntry
 {
@@ -18,9 +18,9 @@ public sealed class TriggerEntry
     public Dictionary<string, object?> Payload { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
-public class ProcessService : IProcessService
+public class CoreProcessService : IProcessService
 {
-    private readonly ILogger<ProcessService> _logger;
+    private readonly ILogger<CoreProcessService> _logger;
     private readonly IResilientConnectionFactory _transactionDataProvider;
     private readonly DatabaseConfig _databaseConfig;
     private readonly FieldMapperService _fieldMapperService;
@@ -32,8 +32,8 @@ public class ProcessService : IProcessService
     private readonly DataEngineOptions _options;
     private readonly IDeterministicIdGenerator _idGenerator;
 
-    public ProcessService(
-        ILogger<ProcessService> logger,
+    public CoreProcessService(
+        ILogger<CoreProcessService> logger,
         IResilientConnectionFactory transactionDataProvider,
         DatabaseConfig databaseConfig,
         FieldMapperService fieldMapperService,

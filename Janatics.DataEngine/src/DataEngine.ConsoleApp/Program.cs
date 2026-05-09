@@ -1,22 +1,23 @@
-using System.Data;
-using System.Text.Json;
 using Janatics.DataEngine;
-using Janatics.DataEngine.Abstractions;
-using Janatics.DataEngine.AuditService.Interface;
-using Janatics.DataEngine.Core.Auditing;
-using Janatics.DataEngine.Core.Mapping;
-using Janatics.DataEngine.Core.Processing;
 using Janatics.DataEngine.FetchService.Abstractions;
 using Janatics.DataEngine.FetchService.Infrastructure.Persistence;
 using Janatics.DataEngine.FetchService.Models;
-using Janatics.DataEngine.Infrastructure.Models;
-using Janatics.DataEngine.Infrastructure.Resilience;
-using Janatics.DataEngine.Models.RequestModels;
+using Janatics.DataEngine.ProcessService.Abstractions;
+using Janatics.DataEngine.ProcessService.Core.Auditing;
+using Janatics.DataEngine.ProcessService.Core.Mapping;
+using Janatics.DataEngine.ProcessService.Core.Processing;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Infrastructure.Resilience;
+using Janatics.DataEngine.ProcessService.Models.RequestModels;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Primitives;
 using Npgsql;
+using System.Data;
+using System.Data.Common;
+using System.Text.Json;
 
 namespace DataEngine.ConsoleApp;
 
@@ -50,8 +51,8 @@ internal static class Program
     {
         return new DatabaseConfig
         {
-            Provider = DatabaseProvider.PostgreSQL,
-            ConnectionString = "Host=localhost;Port=5432;Database=DataEngine;Username=postgres;Password=0909",
+            Provider = DatabaseProvider.Sqlite,
+            ConnectionString = "Data Source=DataEngineDev.db;Cache=Shared",
             EnablePooling = true,
             MaxPoolSize = 50,
             MinPoolSize = 0,
@@ -92,7 +93,7 @@ internal static class Program
             null,
             null);
 
-        var queryNumber = 900001L;
+        var queryNumber = 1;
         var saveRequest = new SaveQueryDefinitionRequest
         {
             QueryNumber = queryNumber,
@@ -170,12 +171,12 @@ internal static class Program
 
         var fieldMapperLogger = loggerFactory.CreateLogger<FieldMapperService>();
         var dataTypeLogger = loggerFactory.CreateLogger<DataTypeConverter>();
-        var processLogger = loggerFactory.CreateLogger<ProcessService>();
+        var processLogger = loggerFactory.CreateLogger<CoreProcessService>();
         IConfiguration configuration = new EmptyConfiguration();
 
         var fieldMapperService = new FieldMapperService(new ConsoleStubDataProvider(), fieldMapperLogger);
         var dataTypeConverter = new DataTypeConverter(dataTypeLogger);
-        var processService = new ProcessService(
+        var processService = new CoreProcessService(
             processLogger,
             resilientFactory,
             databaseConfig,
@@ -243,18 +244,45 @@ internal static class Program
 
     private static async Task EnsureFetchSchemaAsync(DatabaseConfig databaseConfig)
     {
-        if (databaseConfig.Provider != DatabaseProvider.PostgreSQL)
-            return;
+        var scriptPath = databaseConfig.Provider switch
+        {
+            DatabaseProvider.PostgreSQL => Path.Combine(AppContext.BaseDirectory, "fetch-process-master-tables.postgresql.sql"),
+            DatabaseProvider.Sqlite => Path.Combine(AppContext.BaseDirectory, "fetch-process-master-tables.sqlite.sql"),
+            _ => null,
+        };
 
-        var scriptPath = Path.Combine(AppContext.BaseDirectory, "fetch-process-master-tables.postgresql.sql");
+        if (scriptPath is null)
+        {
+            Console.WriteLine("Fetch bootstrap schema is not supported for this database provider.");
+            return;
+        }
+
         if (!File.Exists(scriptPath))
             throw new FileNotFoundException("Bootstrap SQL script was not found in the console output.", scriptPath);
 
         var script = await File.ReadAllTextAsync(scriptPath).ConfigureAwait(false);
-        await using var connection = new NpgsqlConnection(databaseConfig.ConnectionString);
-        await connection.OpenAsync().ConfigureAwait(false);
-        await using var command = new NpgsqlCommand(script, connection);
-        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+
+        switch (databaseConfig.Provider)
+        {
+            case DatabaseProvider.PostgreSQL:
+            {
+                await using var pgConnection = new NpgsqlConnection(databaseConfig.ConnectionString);
+                await pgConnection.OpenAsync().ConfigureAwait(false);
+                await using var pgCommand = new NpgsqlCommand(script, pgConnection);
+                await pgCommand.ExecuteNonQueryAsync().ConfigureAwait(false);
+                break;
+            }
+
+            case DatabaseProvider.Sqlite:
+            {
+                await using var sqliteConnection = new SqliteConnection(databaseConfig.ConnectionString);
+                await sqliteConnection.OpenAsync().ConfigureAwait(false);
+                await using var sqliteCommand = new SqliteCommand(script, sqliteConnection);
+                await sqliteCommand.ExecuteNonQueryAsync().ConfigureAwait(false);
+                break;
+            }
+        }
+
         Console.WriteLine("Fetch bootstrap schema ensured.");
     }
 }
@@ -291,7 +319,7 @@ internal sealed class ConsoleStubDataProvider : IDataProvider
     public string FormatTableName(string tableName)
         => tableName;
 
-    public Task<int> ExecuteNonQueryAsync(string sql, NpgsqlCommand command)
+    public Task<int> ExecuteNonQueryAsync(string sql, DbCommand command)
         => Task.FromResult(0);
 
     public Task<int> BulkInsertAsync(string tableName, DataTable dataTable, IDbTransaction transaction)

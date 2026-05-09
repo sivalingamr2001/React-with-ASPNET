@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Janatics.DataEngine.FieldMapper.Model
+namespace Janatics.DataEngine.ProcessService.FieldMapper.Model
 {
     /// <summary>
     /// Represents a validation configuration stored in the database

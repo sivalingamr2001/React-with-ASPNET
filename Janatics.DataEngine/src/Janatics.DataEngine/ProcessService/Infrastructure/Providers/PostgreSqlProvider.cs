@@ -1,11 +1,12 @@
-using Janatics.DataEngine.Abstractions;
-using Janatics.DataEngine.Core.Auditing;
-using Janatics.DataEngine.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Abstractions;
+using Janatics.DataEngine.ProcessService.Core.Auditing;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using System.Data;
+using System.Data.Common;
 
-namespace Janatics.DataEngine.Infrastructure.Providers;
+namespace Janatics.DataEngine.ProcessService.Infrastructure.Providers;
 
 /// <summary>
 /// Enhanced PostgreSQL provider that implements IDataProvider with optimized connection management,
@@ -54,7 +55,7 @@ public class PostgreSqlProvider : IDataProvider
         return result;
     }
 
-    public async Task<int> ExecuteNonQueryAsync(string sql, NpgsqlCommand command)
+    public async Task<int> ExecuteNonQueryAsync(string sql, DbCommand command)
     {
         try
         {

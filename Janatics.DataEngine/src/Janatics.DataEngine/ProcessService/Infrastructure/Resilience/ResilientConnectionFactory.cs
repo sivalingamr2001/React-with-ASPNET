@@ -1,12 +1,12 @@
-using Janatics.DataEngine.Abstractions;
-using Janatics.DataEngine.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Abstractions;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
 
-namespace Janatics.DataEngine.Infrastructure.Resilience;
+namespace Janatics.DataEngine.ProcessService.Infrastructure.Resilience;
 
 public class ResilientConnectionFactory : IResilientConnectionFactory, IDisposable
 {

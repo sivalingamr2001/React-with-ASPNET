@@ -1,9 +1,9 @@
-using Janatics.DataEngine.Core.Auditing;
-using Janatics.DataEngine.Models.Metadata;
+using Janatics.DataEngine.ProcessService.Core.Auditing;
+using Janatics.DataEngine.ProcessService.Models.Metadata;
 using Microsoft.Extensions.Logging;
 using System.Data;
 
-namespace Janatics.DataEngine.Core.Mapping;
+namespace Janatics.DataEngine.ProcessService.Core.Mapping;
 
 public class FieldMapperService(IDataProvider configDataProvider, ILogger<FieldMapperService> logger)
 {

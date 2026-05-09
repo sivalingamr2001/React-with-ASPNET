@@ -1,5 +1,5 @@
 using Janatics.DataEngine.FetchService.Models;
-using Janatics.DataEngine.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
 
 namespace Janatics.DataEngine;
 

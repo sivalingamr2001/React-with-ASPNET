@@ -1,8 +1,8 @@
-using Janatics.DataEngine.AuditService.Interface;
-using Janatics.DataEngine.Models.Audit;
+using Janatics.DataEngine.ProcessService.Models.Audit;
+using Janatics.DataEngine.ProcessService.AuditService.Interface;
 using System.Data;
 
-namespace Janatics.DataEngine.Abstractions;
+namespace Janatics.DataEngine.ProcessService.Abstractions;
 
 public interface IAuditService
 {

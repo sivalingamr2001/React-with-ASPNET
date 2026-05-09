@@ -4,9 +4,10 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Janatics.DataEngine.Abstractions;
 using Janatics.DataEngine.FetchService.Abstractions;
 using Janatics.DataEngine.FetchService.Models;
+using Janatics.DataEngine.ProcessService.Abstractions;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -303,16 +304,35 @@ public class FetchService : IFetchService
             return cachedTables;
 
         using var connection = await _connectionFactory.CreateConnectionAsync(_options.DatabaseConfig).ConfigureAwait(false);
-        const string sql = """
-            SELECT table_name
-            FROM information_schema.tables
-            WHERE table_schema = 'public'
-              AND table_type = 'BASE TABLE'
-            ORDER BY table_name
-            """;
+        var sql = _options.DatabaseConfig.Provider switch
+        {
+            DatabaseProvider.Sqlite => """
+                SELECT name
+                FROM sqlite_master
+                WHERE type = 'table'
+                  AND name NOT LIKE 'sqlite_%'
+                ORDER BY name
+                """,
+            _ => """
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = @schemaName
+                  AND table_type = 'BASE TABLE'
+                ORDER BY table_name
+                """
+        };
 
         using var command = connection.CreateCommand();
         command.CommandText = sql;
+
+        if (_options.DatabaseConfig.Provider != DatabaseProvider.Sqlite)
+        {
+            var schemaParam = command.CreateParameter();
+            schemaParam.ParameterName = "@schemaName";
+            schemaParam.Value = _options.SchemaName;
+            command.Parameters.Add(schemaParam);
+        }
+
         using var reader = await ExecuteReaderAsync(command, cancellationToken).ConfigureAwait(false);
 
         var tables = new List<TableMetadataModel>();
@@ -345,36 +365,51 @@ public class FetchService : IFetchService
             return cachedColumns;
 
         using var connection = await _connectionFactory.CreateConnectionAsync(_options.DatabaseConfig).ConfigureAwait(false);
-        const string sql = """
-            SELECT
-                c.column_name,
-                c.data_type,
-                c.is_nullable,
-                c.ordinal_position,
-                CASE WHEN pk.column_name IS NULL THEN FALSE ELSE TRUE END AS is_primary_key
-            FROM information_schema.columns c
-            LEFT JOIN (
-                SELECT kcu.table_schema, kcu.table_name, kcu.column_name
-                FROM information_schema.table_constraints tc
-                JOIN information_schema.key_column_usage kcu
-                    ON tc.constraint_name = kcu.constraint_name
-                   AND tc.table_schema = kcu.table_schema
-                WHERE tc.constraint_type = 'PRIMARY KEY'
-            ) pk
-                ON pk.table_schema = c.table_schema
-               AND pk.table_name = c.table_name
-               AND pk.column_name = c.column_name
-            WHERE c.table_schema = 'public'
-              AND c.table_name = @tablename
-            ORDER BY c.ordinal_position
-            """;
+
+        var sql = _options.DatabaseConfig.Provider switch
+        {
+            DatabaseProvider.Sqlite => $"PRAGMA table_info('{tableName.Replace("'", "''")}')",
+            _ => """
+                SELECT
+                    c.column_name,
+                    c.data_type,
+                    c.is_nullable,
+                    c.ordinal_position,
+                    CASE WHEN pk.column_name IS NULL THEN FALSE ELSE TRUE END AS is_primary_key
+                FROM information_schema.columns c
+                LEFT JOIN (
+                    SELECT kcu.table_schema, kcu.table_name, kcu.column_name
+                    FROM information_schema.table_constraints tc
+                    JOIN information_schema.key_column_usage kcu
+                        ON tc.constraint_name = kcu.constraint_name
+                       AND tc.table_schema = kcu.table_schema
+                    WHERE tc.constraint_type = 'PRIMARY KEY'
+                ) pk
+                    ON pk.table_schema = c.table_schema
+                   AND pk.table_name = c.table_name
+                   AND pk.column_name = c.column_name
+                WHERE c.table_schema = @schemaName
+                  AND c.table_name = @tablename
+                ORDER BY c.ordinal_position
+                """
+        };
 
         using var command = connection.CreateCommand();
         command.CommandText = sql;
-        var parameter = command.CreateParameter();
-        parameter.ParameterName = "@tablename";
-        parameter.Value = tableName;
-        command.Parameters.Add(parameter);
+
+        if (_options.DatabaseConfig.Provider != DatabaseProvider.Sqlite)
+        {
+            var schemaParam = command.CreateParameter();
+            schemaParam.ParameterName = "@schemaName";
+            schemaParam.Value = _options.SchemaName;
+            command.Parameters.Add(schemaParam);
+
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = "@tablename";
+            parameter.Value = tableName;
+            command.Parameters.Add(parameter);
+        }
+
         using var reader = await ExecuteReaderAsync(command, cancellationToken).ConfigureAwait(false);
 
         var columns = new List<ColumnMetadataModel>();

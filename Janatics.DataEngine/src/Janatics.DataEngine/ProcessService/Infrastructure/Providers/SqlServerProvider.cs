@@ -1,251 +1,417 @@
-using Janatics.DataEngine.Core.Auditing;
-using Janatics.DataEngine.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Abstractions;
+using Janatics.DataEngine.ProcessService.Core.Auditing;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
-using Npgsql;
 using System.Data;
+using System.Data.Common;
 
-namespace Janatics.DataEngine.Infrastructure.Providers
+namespace Janatics.DataEngine.ProcessService.Infrastructure.Providers;
+
+/// <summary>
+/// Enhanced SQL Server provider that implements IDataProvider with optimized connection management,
+/// connection sharing, and advanced monitoring capabilities
+/// </summary>
+public class SqlServerProvider : IDataProvider
 {
-    public class SqlServerProvider : IDataProvider
-    {   
-        private readonly string _connectionString;
-        private readonly ILogger<SqlServerProvider> _logger;
+    private readonly IResilientConnectionFactory _connectionFactory;
+    private readonly DatabaseConfig _databaseConfig;
+    private readonly ILogger<SqlServerProvider> _logger;
 
-        public SqlServerProvider(string connectionString, ILogger<SqlServerProvider> logger)
-        {
-            _connectionString = connectionString;
-            _logger = logger;
-        }
+    public SqlServerProvider(
+        IResilientConnectionFactory connectionFactory,
+        DatabaseConfig databaseConfig,
+        ILogger<SqlServerProvider> logger)
+    {
+        _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
+        _databaseConfig = databaseConfig ?? throw new ArgumentNullException(nameof(databaseConfig));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
 
-        public SqlServerProvider(DatabaseConfig config, ILogger<SqlServerProvider> logger)
-            : this(config?.ConnectionString ?? throw new ArgumentNullException(nameof(config)), logger)
-        {
-        }
+    #region IDataProvider Implementation (Legacy Methods)
 
-        public async Task<IDbConnection> GetConnectionAsync()
-        {
-            var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-            _logger.LogDebug("SQL Server connection opened");
-            return connection;
-        }
+    public async Task<IDbConnection> GetConnectionAsync()
+    {
+        return await _connectionFactory.CreateConnectionAsync(_databaseConfig);
+    }
 
-        public async Task<IDbTransaction> BeginTransactionAsync(IDbConnection connection)
-        {
-            var transaction = connection.BeginTransaction();
-            _logger.LogDebug("SQL Server transaction started");
-            return await Task.FromResult(transaction);
-        }
+    public async Task<IDbTransaction> BeginTransactionAsync(IDbConnection connection)
+    {
+        var transaction = connection.BeginTransaction();
+        _logger.LogDebug("SQL Server transaction started");
+        return await Task.FromResult(transaction);
+    }
 
-        public async Task<int> ExecuteNonQueryAsync(string sql, Dictionary<string, object> parameters, IDbTransaction transaction)
+    public async Task<int> ExecuteNonQueryAsync(string sql, Dictionary<string, object> parameters, IDbTransaction transaction)
+    {
+        using var command = new SqlCommand(sql, GetSqlConnection(transaction), GetSqlTransaction(transaction));
+        AddParameters(command, parameters);
+
+        _logger.LogDebug("Executing SQL: {Sql} with {ParameterCount} parameters", sql, parameters.Count);
+
+        var result = await command.ExecuteNonQueryAsync();
+        _logger.LogDebug("Rows affected: {RowsAffected}", result);
+
+        return result;
+    }
+
+    public async Task<int> ExecuteNonQueryAsync(string sql, DbCommand command)
+    {
+        try
         {
-            using var command = new SqlCommand(sql, GetSqlConnection(transaction), GetSqlTransaction(transaction));
-            AddParameters(command, parameters);
-            
-            _logger.LogDebug("Executing SQL: {Sql} with {ParameterCount} parameters", sql, parameters.Count);
-            
             var result = await command.ExecuteNonQueryAsync();
             _logger.LogDebug("Rows affected: {RowsAffected}", result);
-            
             return result;
         }
-
-        public async Task<object?> ExecuteScalarAsync(string sql, Dictionary<string, object> parameters, IDbTransaction transaction)
+        catch (Exception ex)
         {
-            using var command = new SqlCommand(sql, GetSqlConnection(transaction), GetSqlTransaction(transaction));
-            AddParameters(command, parameters);
-            
-            _logger.LogDebug("Executing scalar SQL: {Sql}", sql);
-            return await command.ExecuteScalarAsync();
-        }
-
-        public async Task<DataTable> ExecuteQueryAsync(string sql, Dictionary<string, object> parameters, IDbTransaction? transaction = null)
-        {
-            var connection = transaction?.Connection ?? await GetConnectionAsync();
-            using var command = new SqlCommand(sql, (SqlConnection)connection, (SqlTransaction?)transaction);
-            AddParameters(command, parameters);
-            
-            _logger.LogDebug("Executing query: {Sql}", sql);
-            
-            var dataTable = new DataTable();
-            using var adapter = new SqlDataAdapter(command);
-            adapter.Fill(dataTable);
-            
-            if (transaction == null)
-                connection.Close();
-                
-            _logger.LogDebug("Query returned {RowCount} rows", dataTable.Rows.Count);
-            return dataTable;
-        }
-
-        public string GetParameterPlaceholder(string parameterName) => $"@{parameterName}";
-
-        public async Task<object?> ExecuteInsertWithReturnAsync(string tableName, Dictionary<string, object> parameters, string returnColumn, IDbTransaction transaction)
-        {
-            var formattedTableName = FormatTableName(tableName);
-            
-            // Separate sequence values from regular parameters
-            var (processedColumns, processedPlaceholders, processedParameters) = ProcessParametersForSequences(parameters);
-            
-            // SQL Server OUTPUT syntax
-            var sql = $"INSERT INTO {formattedTableName} ({string.Join(", ", processedColumns)}) OUTPUT INSERTED.{returnColumn} VALUES ({string.Join(", ", processedPlaceholders)})";
-            
-            _logger.LogDebug("Executing INSERT with OUTPUT: {Sql}", sql);
-            return await ExecuteScalarAsync(sql, processedParameters, transaction);
-        }
-
-        public async Task<int> ExecuteUpdateAsync(string tableName, Dictionary<string, object> parameters, Dictionary<string, object> whereConditions, IDbTransaction transaction)
-        {
-            var formattedTableName = FormatTableName(tableName);
-            
-            // Build SET clause with sequence handling
-            var setClauses = new List<string>();
-            var allParameters = new Dictionary<string, object>();
-            
-            foreach (var param in parameters)
-            {
-                if (param.Value is string stringValue && stringValue.StartsWith("NEXTVAL("))
-                {
-                    // Convert PostgreSQL NEXTVAL to SQL Server NEXT VALUE FOR
-                    var sequenceName = stringValue.Replace("NEXTVAL('", "").Replace("')", "");
-                    var sqlServerSequence = $"NEXT VALUE FOR {sequenceName}";
-                    setClauses.Add($"{param.Key} = {sqlServerSequence}");
-                    _logger.LogTrace("Using sequence function in UPDATE: {SequenceFunction} for column {Column}", sqlServerSequence, param.Key);
-                }
-                else
-                {
-                    // Regular parameter
-                    setClauses.Add($"{param.Key} = {GetParameterPlaceholder($"set_{param.Key}")}");
-                    allParameters[$"set_{param.Key}"] = param.Value;
-                }
-            }
-            
-            // Build WHERE clause
-            var whereClause = string.Join(" AND ", whereConditions.Keys.Select(key => $"{key} = {GetParameterPlaceholder($"where_{key}")}"));
-            
-            // Add WHERE parameters
-            foreach (var param in whereConditions)
-            {
-                allParameters[$"where_{param.Key}"] = param.Value;
-            }
-            
-            var sql = $"UPDATE {formattedTableName} SET {string.Join(", ", setClauses)} WHERE {whereClause}";
-            
-            _logger.LogDebug("Executing UPDATE: {Sql}", sql);
-            return await ExecuteNonQueryAsync(sql, allParameters, transaction);
-        }
-
-        public async Task<int> ExecuteDeleteAsync(string tableName, Dictionary<string, object> whereConditions, IDbTransaction transaction)
-        {
-            var formattedTableName = FormatTableName(tableName);
-            
-            // Build WHERE clause
-            var whereClause = string.Join(" AND ", whereConditions.Keys.Select(key => $"{key} = {GetParameterPlaceholder(key)}"));
-            
-            var sql = $"DELETE FROM {formattedTableName} WHERE {whereClause}";
-            
-            _logger.LogDebug("Executing DELETE: {Sql}", sql);
-            return await ExecuteNonQueryAsync(sql, whereConditions, transaction);
-        }
-
-        public string FormatTableName(string tableName)
-        {
-            // SQL Server supports bracket notation as-is
-            // If no brackets, add them for safety
-            if (!tableName.Contains("[") && tableName.Contains("."))
-            {
-                var parts = tableName.Split('.');
-                return $"[{parts[0]}].[{parts[1]}]";
-            }
-            return tableName;
-        }
-
-        private (List<string> columns, List<string> placeholders, Dictionary<string, object> parameters) ProcessParametersForSequences(Dictionary<string, object> originalParameters)
-        {
-            var columns = new List<string>();
-            var placeholders = new List<string>();
-            var parameters = new Dictionary<string, object>();
-            
-            foreach (var param in originalParameters)
-            {
-                columns.Add(param.Key);
-                
-                // Check if value is a sequence function call
-                if (param.Value is string stringValue && stringValue.StartsWith("NEXTVAL("))
-                {
-                    // Convert PostgreSQL NEXTVAL to SQL Server NEXT VALUE FOR
-                    var sequenceName = stringValue.Replace("NEXTVAL('", "").Replace("')", "");
-                    var sqlServerSequence = $"NEXT VALUE FOR {sequenceName}";
-                    placeholders.Add(sqlServerSequence);
-                    _logger.LogTrace("Using sequence function: {SequenceFunction} for column {Column}", sqlServerSequence, param.Key);
-                }
-                else
-                {
-                    // Regular parameter
-                    placeholders.Add(GetParameterPlaceholder(param.Key));
-                    parameters[param.Key] = param.Value;
-                }
-            }
-            
-            return (columns, placeholders, parameters);
-        }
-
-        private void AddParameters(SqlCommand command, Dictionary<string, object> parameters)
-        {
-            foreach (var param in parameters)
-            {
-                var parameterValue = param.Value ?? DBNull.Value;
-                command.Parameters.AddWithValue($"@{param.Key}", parameterValue);
-                _logger.LogTrace("Parameter: @{ParamName} = {ParamValue}", param.Key, parameterValue);
-            }
-        }
-
-        public Task<int> ExecuteNonQueryAsync(string sql, NpgsqlCommand command)
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task<int> BulkInsertAsync(string tableName, DataTable dataTable, IDbTransaction transaction)
-        {
-            var formattedTableName = FormatTableName(tableName);
-            
-            _logger.LogInformation("Starting SQL Server BulkCopy for table {TableName} with {RowCount} rows", tableName, dataTable.Rows.Count);
-            
-            using var bulkCopy = new SqlBulkCopy(GetSqlConnection(transaction), SqlBulkCopyOptions.Default, GetSqlTransaction(transaction))
-            {
-                DestinationTableName = formattedTableName,
-                BatchSize = 1000,
-                BulkCopyTimeout = 300
-            };
-
-            // Map columns
-            foreach (DataColumn column in dataTable.Columns)
-            {
-                bulkCopy.ColumnMappings.Add(column.ColumnName, column.ColumnName);
-            }
-
-            await bulkCopy.WriteToServerAsync(dataTable);
-            
-            _logger.LogInformation("SQL Server BulkCopy completed for table {TableName}, {RowCount} rows inserted", tableName, dataTable.Rows.Count);
-            
-            return dataTable.Rows.Count;
-        }
-
-        private static SqlConnection GetSqlConnection(IDbTransaction transaction)
-        {
-            ArgumentNullException.ThrowIfNull(transaction);
-
-            return transaction.Connection as SqlConnection
-                ?? throw new InvalidOperationException("The SQL Server provider requires an active SqlConnection on the supplied transaction.");
-        }
-
-        private static SqlTransaction GetSqlTransaction(IDbTransaction transaction)
-        {
-            ArgumentNullException.ThrowIfNull(transaction);
-
-            return transaction as SqlTransaction
-                ?? throw new InvalidOperationException("The SQL Server provider requires a SqlTransaction instance.");
+            _logger.LogError(ex, "Error executing non-query SQL: {Sql}", sql);
+            throw;
         }
     }
+
+    public async Task<object?> ExecuteScalarAsync(string sql, Dictionary<string, object> parameters, IDbTransaction transaction)
+    {
+        using var command = new SqlCommand(sql, GetSqlConnection(transaction), GetSqlTransaction(transaction));
+        AddParameters(command, parameters);
+
+        _logger.LogDebug("Executing scalar SQL: {Sql}", sql);
+        return await command.ExecuteScalarAsync();
+    }
+
+    public async Task<DataTable> ExecuteQueryAsync(string sql, Dictionary<string, object> parameters, IDbTransaction? transaction = null)
+    {
+        var connection = transaction?.Connection ?? await GetConnectionAsync();
+        using var command = new SqlCommand(sql, (SqlConnection)connection, (SqlTransaction?)transaction);
+        AddParameters(command, parameters);
+
+        _logger.LogDebug("Executing query: {Sql}", sql);
+
+        var dataTable = new DataTable();
+        using var adapter = new SqlDataAdapter(command);
+        adapter.Fill(dataTable);
+
+        if (transaction == null)
+            connection.Close();
+
+        _logger.LogDebug("Query returned {RowCount} rows", dataTable.Rows.Count);
+        return dataTable;
+    }
+
+    public async Task<object?> ExecuteInsertWithReturnAsync(string tableName, Dictionary<string, object> parameters, string returnColumn, IDbTransaction transaction)
+    {
+        var formattedTableName = FormatTableName(tableName);
+
+        var (processedColumns, processedPlaceholders, processedParameters) = ProcessParametersForSequences(parameters);
+
+        var quotedColumns = processedColumns
+            .Select(col => $"[{col}]")
+            .ToList();
+
+        var sql =
+            $"INSERT INTO {formattedTableName} ({string.Join(", ", quotedColumns)}) " +
+            $"VALUES ({string.Join(", ", processedPlaceholders)}); SELECT SCOPE_IDENTITY();";
+
+        _logger.LogDebug("Executing INSERT with SCOPE_IDENTITY: {Sql}", sql);
+        return await ExecuteScalarAsync(sql, processedParameters, transaction);
+    }
+
+    public async Task<int> ExecuteUpdateAsync(string tableName, Dictionary<string, object> parameters, Dictionary<string, object> whereConditions, IDbTransaction transaction)
+    {
+        var formattedTableName = FormatTableName(tableName);
+
+        var setClauses = new List<string>();
+        var allParameters = new Dictionary<string, object>();
+
+        foreach (var param in parameters)
+        {
+            if (param.Value is string stringValue && stringValue.StartsWith("NEXTVAL("))
+            {
+                setClauses.Add($"[{param.Key}] = {stringValue}");
+                _logger.LogTrace("Using sequence function in UPDATE: {SequenceFunction} for column {Column}", stringValue, param.Key);
+            }
+            else if (param.Value is string stringValue1 && stringValue1.StartsWith("SQL:"))
+            {
+                var rawSql = stringValue1.Substring(4);
+                setClauses.Add($"[{param.Key}] = {rawSql}");
+                _logger.LogTrace("Using raw SQL expression in UPDATE: {RawSql} for column {Column}", rawSql, param.Key);
+            }
+            else
+            {
+                setClauses.Add($"[{param.Key}] = {GetParameterPlaceholder($"set_{param.Key}")}");
+                allParameters[$"set_{param.Key}"] = param.Value;
+            }
+        }
+
+        var whereClause = string.Join(" AND ", whereConditions.Keys.Select(key => $"[{key}] = {GetParameterPlaceholder($"where_{key}")}"));
+
+        foreach (var param in whereConditions)
+        {
+            allParameters[$"where_{param.Key}"] = param.Value;
+        }
+
+        var sql = $"UPDATE {formattedTableName} SET {string.Join(", ", setClauses)} WHERE {whereClause}";
+
+        _logger.LogDebug("Executing UPDATE: {Sql}", sql);
+        return await ExecuteNonQueryAsync(sql, allParameters, transaction);
+    }
+
+    public async Task<int> ExecuteDeleteAsync(string tableName, Dictionary<string, object> whereConditions, IDbTransaction transaction)
+    {
+        var formattedTableName = FormatTableName(tableName);
+        var whereClause = string.Join(" AND ", whereConditions.Keys.Select(key => $"[{key}] = {GetParameterPlaceholder(key)}"));
+        var sql = $"DELETE FROM {formattedTableName} WHERE {whereClause}";
+
+        _logger.LogDebug("Executing DELETE: {Sql}", sql);
+        return await ExecuteNonQueryAsync(sql, whereConditions, transaction);
+    }
+
+    public async Task<int> BulkInsertAsync(string tableName, DataTable dataTable, IDbTransaction transaction)
+    {
+        var formattedTableName = FormatTableName(tableName);
+
+        _logger.LogInformation("Starting SQL Server SqlBulkCopy for table {TableName} with {RowCount} rows", tableName, dataTable.Rows.Count);
+
+        var connection = GetSqlConnection(transaction);
+        using var bulkCopy = new SqlBulkCopy(connection, SqlBulkCopyOptions.Default, GetSqlTransaction(transaction))
+        {
+            DestinationTableName = formattedTableName,
+            BatchSize = 10000,
+            BulkCopyTimeout = 300
+        };
+
+        foreach (DataColumn column in dataTable.Columns)
+        {
+            bulkCopy.ColumnMappings.Add(column.ColumnName, column.ColumnName);
+        }
+
+        await bulkCopy.WriteToServerAsync(dataTable);
+
+        _logger.LogInformation("SQL Server SqlBulkCopy completed for table {TableName}, {RowCount} rows inserted", tableName, dataTable.Rows.Count);
+
+        return dataTable.Rows.Count;
+    }
+
+    public string GetParameterPlaceholder(string parameterName) => $"@{parameterName}";
+
+    public string FormatTableName(string tableName)
+    {
+        var parts = tableName.Split('.');
+        var quotedParts = parts.Select(p => $"[{p}]");
+        return string.Join(".", quotedParts);
+    }
+
+    #endregion
+
+    #region IEnhancedDataProvider Implementation
+
+    public async Task<T> ExecuteInScopeAsync<T>(Func<IDbConnection, Task<T>> operation)
+    {
+        await using var scope = await CreateOperationScopeAsync();
+        return await operation(scope.Connection);
+    }
+
+    public async Task<T> ExecuteInTransactionScopeAsync<T>(Func<IDbConnection, IDbTransaction, Task<T>> operation)
+    {
+        await using var scope = await CreateOperationScopeAsync();
+        using var transaction = await BeginTransactionAsync(scope.Connection);
+        try
+        {
+            var result = await operation(scope.Connection, transaction);
+            transaction.Commit();
+            return result;
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+        finally
+        {
+            await TerminateOtherIdleConnectionsAsync(scope.Connection);
+        }
+    }
+
+    private async Task TerminateOtherIdleConnectionsAsync(IDbConnection connection)
+    {
+        if (connection is not SqlConnection sqlConnection || sqlConnection.State != ConnectionState.Open)
+            return;
+
+        try
+        {
+            const string sql = @"
+                SELECT session_id 
+                FROM sys.dm_exec_sessions 
+                WHERE status = 'sleeping' 
+                AND session_id <> @@SPID 
+                AND last_request_start_time < DATEADD(SECOND, -60, GETDATE())
+                AND is_user_process = 1;";
+
+            using var command = new SqlCommand(sql, sqlConnection) { CommandTimeout = 5 };
+            var sessionIds = new List<int>();
+
+            await using (var reader = await command.ExecuteReaderAsync())
+            {
+                while (await reader.ReadAsync())
+                {
+                    sessionIds.Add(reader.GetInt32(0));
+                }
+            }
+
+            foreach (var sessionId in sessionIds)
+            {
+                using var killCmd = new SqlCommand($"KILL {sessionId};", sqlConnection);
+                await killCmd.ExecuteNonQueryAsync();
+            }
+        }
+        catch (SqlException ex) when (ex.Number == 6106)
+        {
+            _logger.LogDebug("Cannot kill own process in idle connection cleanup.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while terminating idle SQL Server connections");
+        }
+    }
+
+    public async Task<int> ExecuteNonQueryAsync(string sql, Dictionary<string, object> parameters, IDbConnection connection, IDbTransaction? transaction = null)
+    {
+        using var command = new SqlCommand(sql, (SqlConnection)connection, (SqlTransaction?)transaction);
+        AddParameters(command, parameters);
+        _logger.LogDebug("Executing SQL with shared connection: {Sql}", sql);
+        return await command.ExecuteNonQueryAsync();
+    }
+
+    public async Task<object?> ExecuteScalarAsync(string sql, Dictionary<string, object> parameters, IDbConnection connection, IDbTransaction? transaction = null)
+    {
+        using var command = new SqlCommand(sql, (SqlConnection)connection, (SqlTransaction?)transaction);
+        AddParameters(command, parameters);
+        _logger.LogDebug("Executing scalar SQL with shared connection: {Sql}", sql);
+        return await command.ExecuteScalarAsync();
+    }
+
+    public async Task<DataTable> ExecuteQueryAsync(string sql, Dictionary<string, object> parameters, IDbConnection connection, IDbTransaction? transaction = null)
+    {
+        using var command = new SqlCommand(sql, (SqlConnection)connection, (SqlTransaction?)transaction);
+        AddParameters(command, parameters);
+        _logger.LogDebug("Executing query with shared connection: {Sql}", sql);
+
+        var dataTable = new DataTable();
+        using var adapter = new SqlDataAdapter(command);
+        adapter.Fill(dataTable);
+        _logger.LogDebug("Query returned {RowCount} rows", dataTable.Rows.Count);
+        return dataTable;
+    }
+
+    public async Task<int> BulkInsertAsync(string tableName, DataTable dataTable, IDbConnection connection, IDbTransaction? transaction = null)
+    {
+        var formattedTableName = FormatTableName(tableName);
+
+        _logger.LogInformation("Starting SQL Server SqlBulkCopy with shared connection for table {TableName}", tableName);
+
+        using var bulkCopy = new SqlBulkCopy((SqlConnection)connection, SqlBulkCopyOptions.Default, (SqlTransaction?)transaction)
+        {
+            DestinationTableName = formattedTableName,
+            BatchSize = 10000,
+            BulkCopyTimeout = 300
+        };
+
+        foreach (DataColumn column in dataTable.Columns)
+        {
+            bulkCopy.ColumnMappings.Add(column.ColumnName, column.ColumnName);
+        }
+
+        await bulkCopy.WriteToServerAsync(dataTable);
+
+        _logger.LogInformation("SQL Server SqlBulkCopy completed for table {TableName}, {RowCount} rows inserted", tableName, dataTable.Rows.Count);
+        return dataTable.Rows.Count;
+    }
+
+    public async Task<bool> ValidateConnectionHealthAsync(IDbConnection connection)
+    {
+        return await _connectionFactory.ValidateConnectionHealthAsync(connection);
+    }
+
+    public ConnectionPoolMetrics GetPoolMetrics()
+    {
+        return _connectionFactory.GetPoolMetrics();
+    }
+
+    public async Task<IOperationScope> CreateOperationScopeAsync()
+    {
+        return await _connectionFactory.CreateOperationScopeAsync(_databaseConfig);
+    }
+
+    public async Task<ConnectionPoolHealth> GetPoolHealthAsync()
+    {
+        return await _connectionFactory.GetPoolHealthAsync();
+    }
+
+    public async Task RecordPerformanceMetricsAsync(ConnectionPerformanceMetrics metrics)
+    {
+        await _connectionFactory.RecordPerformanceMetricsAsync(metrics);
+    }
+
+    #endregion
+
+    #region Private Helper Methods
+
+    private (List<string> columns, List<string> placeholders, Dictionary<string, object> parameters) ProcessParametersForSequences(Dictionary<string, object> originalParameters)
+    {
+        var columns = new List<string>();
+        var placeholders = new List<string>();
+        var parameters = new Dictionary<string, object>();
+
+        foreach (var param in originalParameters)
+        {
+            columns.Add(param.Key);
+
+            if (param.Value is string stringValue)
+            {
+                if (stringValue.StartsWith("NEXTVAL("))
+                {
+                    placeholders.Add(stringValue);
+                    continue;
+                }
+                if (stringValue.StartsWith("SQL:"))
+                {
+                    placeholders.Add(stringValue.Substring(4));
+                    continue;
+                }
+            }
+
+            placeholders.Add(GetParameterPlaceholder(param.Key));
+            parameters[param.Key] = param.Value;
+        }
+
+        return (columns, placeholders, parameters);
+    }
+
+    private void AddParameters(SqlCommand command, Dictionary<string, object> parameters)
+    {
+        if (parameters == null) return;
+
+        foreach (var param in parameters)
+        {
+            var parameterValue = param.Value ?? DBNull.Value;
+            command.Parameters.AddWithValue($"@{param.Key}", parameterValue);
+            _logger.LogTrace("Parameter: @{ParamName} = {ParamValue}", param.Key, parameterValue);
+        }
+    }
+
+    private static SqlConnection GetSqlConnection(IDbTransaction transaction)
+    {
+        ArgumentNullException.ThrowIfNull(transaction);
+        return transaction.Connection as SqlConnection
+            ?? throw new InvalidOperationException("The SQL Server provider requires an active SqlConnection on the supplied transaction.");
+    }
+
+    private static SqlTransaction GetSqlTransaction(IDbTransaction transaction)
+    {
+        ArgumentNullException.ThrowIfNull(transaction);
+        return transaction as SqlTransaction
+            ?? throw new InvalidOperationException("The SQL Server provider requires a SqlTransaction instance.");
+    }
+
+    #endregion
 }

@@ -1,4 +1,4 @@
-namespace Janatics.DataEngine.Models.Execution;
+namespace Janatics.DataEngine.ProcessService.Models.Execution;
 
 public enum ProcessExecutionState
 {

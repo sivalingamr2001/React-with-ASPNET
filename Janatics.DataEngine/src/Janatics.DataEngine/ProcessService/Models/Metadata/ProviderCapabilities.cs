@@ -1,4 +1,4 @@
-namespace Janatics.DataEngine.Models.Metadata;
+namespace Janatics.DataEngine.ProcessService.Models.Metadata;
 
 public sealed class ProviderCapabilities
 {

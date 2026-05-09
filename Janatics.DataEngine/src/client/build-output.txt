@@ -1,0 +1,29 @@
+﻿
+> react-app@0.0.1 build
+> tsc -b && vite build --mode production
+
+src/features/dashboard_v2/field-mapper/page.tsx(4,1): error TS6133: 'useDataEngine' is declared but its value is never read.
+src/features/dashboard_v2/query-builder/page.tsx(12,38): error TS6133: 'dbConfigs' is declared but its value is never read.
+src/features/dashboard_v2/table-manager/page.tsx(14,49): error TS6133: 'dbConfigs' is declared but its value is never read.
+src/shared/components/auth/AuthProvider.tsx(3,10): error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/shared/components/auth/LoginForm.tsx(4,27): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+src/shared/components/auth/RoleGuard.tsx(3,10): error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/shared/components/auth/RoleGuard.tsx(22,17): error TS6133: 'hasPermission' is declared but its value is never read.
+src/shared/components/dashboard/DashboardNav.tsx(12,3): error TS6133: 'Settings' is declared but its value is never read.
+src/shared/components/dashboard/DashboardNav.tsx(59,9): error TS6133: 'pathname' is declared but its value is never read.
+src/shared/components/db-config/DatabaseConfigForm.tsx(5,10): error TS1484: 'DatabaseConfig' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/shared/components/db-config/DatabaseConfigList.tsx(3,10): error TS1484: 'DatabaseConfig' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/shared/components/field-mapper/FieldMappingForm.tsx(15,10): error TS1484: 'FieldMapping' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/shared/components/logs/LogViewer.tsx(3,10): error TS1484: 'LogEntry' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/shared/components/logs/LogViewer.tsx(4,1): error TS6192: All imports in import declaration are unused.
+src/shared/components/query-builder/QueryBuilder.tsx(5,10): error TS1484: 'Query' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/shared/components/query-builder/QueryBuilder.tsx(5,17): error TS1484: 'QueryField' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/shared/components/query-builder/QueryBuilder.tsx(5,17): error TS6133: 'QueryField' is declared but its value is never read.
+src/shared/components/query-builder/QueryBuilder.tsx(5,29): error TS1484: 'QueryFilter' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/shared/components/query-builder/QueryBuilder.tsx(5,29): error TS6133: 'QueryFilter' is declared but its value is never read.
+src/shared/components/query-builder/QueryBuilder.tsx(25,48): error TS6133: 'setSelectedConfigId' is declared but its value is never read.
+src/shared/components/query-builder/QueryBuilder.tsx(55,9): error TS6133: 'configTables' is declared but its value is never read.
+src/shared/components/query-builder/QueryHistory.tsx(3,10): error TS1484: 'Query' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/shared/components/table-manager/TableForm.tsx(5,10): error TS1484: 'Table' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/shared/components/table-manager/TableForm.tsx(5,17): error TS1484: 'Column' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/shared/components/table-manager/TableList.tsx(3,10): error TS1484: 'Table' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.

@@ -1,9 +1,9 @@
-using Janatics.DataEngine.Abstractions;
-using Janatics.DataEngine.Models.Audit;
+using Janatics.DataEngine.ProcessService.Abstractions;
+using Janatics.DataEngine.ProcessService.Models.Audit;
 using Microsoft.Extensions.Logging;
 using System.Threading.Channels;
 
-namespace Janatics.DataEngine.Core.Auditing
+namespace Janatics.DataEngine.ProcessService.Core.Auditing
 {
     /// <summary>
     /// Channel-based audit queue for fire-and-forget audit logging

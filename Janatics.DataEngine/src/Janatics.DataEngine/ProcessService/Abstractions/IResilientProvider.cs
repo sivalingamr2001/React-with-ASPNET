@@ -1,8 +1,8 @@
 using System.Data;
-using Janatics.DataEngine.Core.Auditing;
-using Janatics.DataEngine.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Core.Auditing;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
 
-namespace Janatics.DataEngine.Abstractions;
+namespace Janatics.DataEngine.ProcessService.Abstractions;
 
 /// <summary>
 /// Enhanced data provider interface that extends IDataProvider with connection-aware operations

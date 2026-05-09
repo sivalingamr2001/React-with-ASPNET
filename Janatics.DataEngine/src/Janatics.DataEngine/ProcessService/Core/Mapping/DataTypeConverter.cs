@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 
-namespace Janatics.DataEngine.Core.Mapping
+namespace Janatics.DataEngine.ProcessService.Core.Mapping
 {
     public class DataTypeConverter
     {

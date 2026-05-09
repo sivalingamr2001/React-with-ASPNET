@@ -1,6 +1,6 @@
 using System.Data;
 
-namespace Janatics.DataEngine.Abstractions;
+namespace Janatics.DataEngine.ProcessService.Abstractions;
 
 /// <summary>
 /// Represents a scope for database operations that shares a single connection

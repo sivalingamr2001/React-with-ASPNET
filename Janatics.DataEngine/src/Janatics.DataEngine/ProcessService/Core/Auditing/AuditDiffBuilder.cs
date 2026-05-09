@@ -1,13 +1,13 @@
-using Janatics.DataEngine.AuditService.Interface;
-using Janatics.DataEngine.Core.Mapping;
-using Janatics.DataEngine.Models.Audit;
+using Janatics.DataEngine.ProcessService.AuditService.Interface;
+using Janatics.DataEngine.ProcessService.Core.Mapping;
+using Janatics.DataEngine.ProcessService.Models.Audit;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using System.Data;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace Janatics.DataEngine.Core.Auditing;
+namespace Janatics.DataEngine.ProcessService.Core.Auditing;
 
 /// <summary>
 /// Builds changelog JSON from audit job data.
@@ -37,7 +37,6 @@ public class AuditDiffBuilder
         if (_globalDataProvider == null)
         {
             _globalDataProvider = dataProvider;
-            Console.WriteLine("[DagTriggerRepository] Global Data provider set");
         }
         // Always set the scoped wrapper for the current execution context
         _asyncLocalDataProvider.Value = dataProvider;

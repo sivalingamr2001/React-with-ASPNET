@@ -1,6 +1,6 @@
-﻿using Janatics.DataEngine.Models.Audit;
+﻿using Janatics.DataEngine.ProcessService.Models.Audit;
 
-namespace Janatics.DataEngine.Abstractions;
+namespace Janatics.DataEngine.ProcessService.Abstractions;
 
 public interface IAuditQueue
 {

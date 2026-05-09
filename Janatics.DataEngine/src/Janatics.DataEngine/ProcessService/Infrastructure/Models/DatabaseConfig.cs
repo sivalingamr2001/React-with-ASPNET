@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Janatics.DataEngine.Infrastructure.Models;
+namespace Janatics.DataEngine.ProcessService.Infrastructure.Models;
 
 public enum DatabaseProvider { Sqlite, PostgreSQL, SqlServer, MySQL, Oracle }
 

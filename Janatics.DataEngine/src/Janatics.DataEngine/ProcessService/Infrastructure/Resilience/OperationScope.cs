@@ -1,9 +1,9 @@
 using System.Data;
-using Janatics.DataEngine.Abstractions;
-using Janatics.DataEngine.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Abstractions;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
 using Microsoft.Extensions.Logging;
 
-namespace Janatics.DataEngine.Infrastructure.Resilience;
+namespace Janatics.DataEngine.ProcessService.Infrastructure.Resilience;
 
 /// <summary>
 /// Implementation of IOperationScope that manages a shared database connection

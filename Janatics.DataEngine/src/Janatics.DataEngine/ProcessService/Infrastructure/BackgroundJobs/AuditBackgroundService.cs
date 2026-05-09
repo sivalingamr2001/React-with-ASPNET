@@ -1,8 +1,8 @@
-using Janatics.DataEngine.Core.Auditing;
+using Janatics.DataEngine.ProcessService.Core.Auditing;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Janatics.DataEngine.Infrastructure.BackgroundJobs;
+namespace Janatics.DataEngine.ProcessService.Infrastructure.BackgroundJobs;
 
 /// <summary>
 /// Background service that processes audit jobs from the queue

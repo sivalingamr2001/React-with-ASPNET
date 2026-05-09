@@ -1,7 +1,7 @@
 using System.Data;
 using System.Data.Common;
-using Janatics.DataEngine.Abstractions;
 using Janatics.DataEngine.FetchService.Abstractions;
+using Janatics.DataEngine.ProcessService.Abstractions;
 using Janatics.DataEngine.FetchService.Models;
 
 namespace Janatics.DataEngine.FetchService.Infrastructure.Persistence;

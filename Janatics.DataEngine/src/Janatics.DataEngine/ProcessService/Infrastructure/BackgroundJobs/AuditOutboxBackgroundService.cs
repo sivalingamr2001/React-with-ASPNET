@@ -1,14 +1,15 @@
-using Janatics.DataEngine.Abstractions;
+using Janatics.DataEngine.ProcessService.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Janatics.DataEngine.Infrastructure.BackgroundJobs;
+namespace Janatics.DataEngine.ProcessService.Infrastructure.BackgroundJobs;
 
 public sealed class AuditOutboxBackgroundService(
-    IAuditOutboxService outboxService,
+    IServiceScopeFactory scopeFactory, // Inject factory instead of the scoped service
     ILogger<AuditOutboxBackgroundService> logger) : BackgroundService
 {
-    private readonly IAuditOutboxService _outboxService = outboxService;
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
     private readonly ILogger<AuditOutboxBackgroundService> _logger = logger;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -17,9 +18,16 @@ public sealed class AuditOutboxBackgroundService(
         {
             try
             {
-                var processed = await _outboxService.ProcessPendingAsync(stoppingToken).ConfigureAwait(false);
-                if (processed > 0)
-                    _logger.LogInformation("Processed {Count} audit outbox messages.", processed);
+                // Create a scope to resolve Scoped services (like DB contexts)
+                using (var scope = _scopeFactory.CreateScope())
+                {
+                    var outboxService = scope.ServiceProvider.GetRequiredService<IAuditOutboxService>();
+
+                    var processed = await outboxService.ProcessPendingAsync(stoppingToken).ConfigureAwait(false);
+
+                    if (processed > 0)
+                        _logger.LogInformation("Processed {Count} audit outbox messages.", processed);
+                }
             }
             catch (Exception ex)
             {

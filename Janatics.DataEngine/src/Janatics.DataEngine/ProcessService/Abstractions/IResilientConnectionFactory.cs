@@ -1,7 +1,7 @@
 using System.Data;
-using Janatics.DataEngine.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
 
-namespace Janatics.DataEngine.Abstractions;
+namespace Janatics.DataEngine.ProcessService.Abstractions;
 
 /// <summary>
 /// Resilient connection factory with advanced optimization features

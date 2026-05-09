@@ -1,15 +1,25 @@
-﻿using Janatics.DataEngine.Abstractions;
-using Janatics.DataEngine.FetchService.Abstractions;
+﻿using Janatics.DataEngine.FetchService.Abstractions;
 using Janatics.DataEngine.FetchService.Models;
-using Janatics.DataEngine.Models.RequestModels;
+using Janatics.DataEngine.ProcessService.Abstractions;
+using Janatics.DataEngine.ProcessService.Models.RequestModels;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Janatics.DataEngine;
 
-public class DataEngine(IProcessService processService, IAuditService auditService, IFetchService fetchService)
+public class DataEngine(IProcessService processService, IAuditService auditService, IFetchService fetchService, IServiceProvider serviceProvider)
 {
     private readonly IProcessService _processService = processService;
     private readonly IAuditService _auditService = auditService;
     private readonly IFetchService _fetchService = fetchService;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+
+    // Add to DataEngine.cs
+    public async Task InitializeSchemaAsync(CancellationToken cancellationToken = default)
+    {
+        // Trigger warm-up manually
+        var preflight = _serviceProvider.GetRequiredService<IMasterTablePreflight>();
+        await preflight.EnsureReadyAsync(cancellationToken);
+    }
 
     /// <summary>
     /// The primary method to run data operations

@@ -1,10 +1,11 @@
 using System.Data;
 using System.Data.Common;
-using Janatics.DataEngine.Abstractions;
 using Janatics.DataEngine.FetchService.Abstractions;
 using Janatics.DataEngine.FetchService.Models;
+using Janatics.DataEngine.ProcessService.Abstractions;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
 
-namespace Janatics.DataEngine.FetchService.Infrastructure.Persistence;
+namespace Janatics.DataEngine.FetchServiceInfrastructure.Persistence;
 
 public sealed class MasterTablePreflight(
     DataEngineOptions options,
@@ -51,8 +52,11 @@ public sealed class MasterTablePreflight(
             if (missingTables.Count > 0)
             {
                 var missing = string.Join(", ", missingTables);
+                var scriptPath = _fetchOptions.DatabaseConfig.Provider == DatabaseProvider.Sqlite
+                    ? "FetchService/Scripts/fetch-process-master-tables.sqlite.sql"
+                    : "FetchService/Scripts/fetch-process-master-tables.postgresql.sql";
                 throw new InvalidOperationException(
-                    $"Required master tables are missing: {missing}. Apply 'FetchService/Scripts/fetch-process-master-tables.postgresql.sql' before using this service.");
+                    $"Required master tables are missing: {missing}. Apply the provider-specific setup script '{scriptPath}' before using this service.");
             }
 
             _validated = true;
@@ -65,20 +69,32 @@ public sealed class MasterTablePreflight(
 
     private async Task<bool> TableExistsAsync(IDbConnection connection, string tableName, CancellationToken cancellationToken)
     {
-        const string sql = """
-            SELECT COUNT(1)
-            FROM information_schema.tables
-            WHERE table_schema = @schemaName
-              AND table_name = @tableName
-            """;
+        var sql = _fetchOptions.DatabaseConfig.Provider switch
+        {
+            DatabaseProvider.Sqlite => """
+                SELECT COUNT(1)
+                FROM sqlite_master
+                WHERE type = 'table'
+                  AND name = @tableName
+                """,
+            _ => """
+                SELECT COUNT(1)
+                FROM information_schema.tables
+                WHERE table_schema = @schemaName
+                  AND table_name = @tableName
+                """
+        };
 
         using var command = connection.CreateCommand();
         command.CommandText = sql;
 
-        var schemaParam = command.CreateParameter();
-        schemaParam.ParameterName = "@schemaName";
-        schemaParam.Value = _fetchOptions.SchemaName;
-        command.Parameters.Add(schemaParam);
+        if (_fetchOptions.DatabaseConfig.Provider != DatabaseProvider.Sqlite)
+        {
+            var schemaParam = command.CreateParameter();
+            schemaParam.ParameterName = "@schemaName";
+            schemaParam.Value = _fetchOptions.SchemaName;
+            command.Parameters.Add(schemaParam);
+        }
 
         var tableParam = command.CreateParameter();
         tableParam.ParameterName = "@tableName";

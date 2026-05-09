@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Janatics.DataEngine.Models.RequestModels;
+namespace Janatics.DataEngine.ProcessService.Models.RequestModels;
 
 public class ProcessRequest
 {

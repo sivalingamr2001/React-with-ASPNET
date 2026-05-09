@@ -1,6 +1,6 @@
-using Janatics.DataEngine.AuditService.Interface;
+using Janatics.DataEngine.ProcessService.AuditService.Interface;
 
-namespace Janatics.DataEngine.Models.Audit;
+namespace Janatics.DataEngine.ProcessService.Models.Audit;
 
 /// <summary>
 /// Represents an audit job to be processed asynchronously

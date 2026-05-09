@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Janatics.DataEngine.FetchService.Models;
-using Janatics.DataEngine.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Janatics.DataEngine.FetchService.Core;

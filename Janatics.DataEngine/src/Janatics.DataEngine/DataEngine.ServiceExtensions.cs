@@ -1,17 +1,17 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using Janatics.DataEngine.Abstractions;
-using Janatics.DataEngine.Core.Auditing;
-using Janatics.DataEngine.Core.Mapping;
-using Janatics.DataEngine.Core.Processing;
-using Janatics.DataEngine.FetchService.Abstractions;
+﻿using Janatics.DataEngine.FetchService.Abstractions;
 using Janatics.DataEngine.FetchService.Core;
 using Janatics.DataEngine.FetchService.Infrastructure.Persistence;
-using Janatics.DataEngine.Infrastructure.Models;
-using Janatics.DataEngine.Infrastructure.Providers;
-using Janatics.DataEngine.Infrastructure.Resilience;
-using Janatics.DataEngine.Infrastructure.BackgroundJobs;
-using Microsoft.Extensions.Caching.Memory;
+using Janatics.DataEngine.FetchServiceInfrastructure.Persistence;
+using Janatics.DataEngine.ProcessService.Abstractions;
+using Janatics.DataEngine.ProcessService.Core.Auditing;
+using Janatics.DataEngine.ProcessService.Core.Mapping;
+using Janatics.DataEngine.ProcessService.Core.Processing;
+using Janatics.DataEngine.ProcessService.Infrastructure.BackgroundJobs;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Infrastructure.Providers;
+using Janatics.DataEngine.ProcessService.Infrastructure.Resilience;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Janatics.DataEngine;
 
@@ -48,6 +48,9 @@ public static class DataEngineServiceExtensions
             {
                 DatabaseProvider.PostgreSQL => ActivatorUtilities.CreateInstance<PostgreSqlProvider>(sp),
                 DatabaseProvider.SqlServer => ActivatorUtilities.CreateInstance<SqlServerProvider>(sp),
+                DatabaseProvider.MySQL => ActivatorUtilities.CreateInstance<MySqlProvider>(sp),
+                DatabaseProvider.Oracle => ActivatorUtilities.CreateInstance<OracleProvider>(sp),
+                DatabaseProvider.Sqlite => ActivatorUtilities.CreateInstance<SqliteProvider>(sp),
                 _ => throw new NotSupportedException($"Provider '{db.Provider}' is not yet registered for IDataProvider runtime usage.")
             };
         });
@@ -66,15 +69,18 @@ public static class DataEngineServiceExtensions
         services.AddScoped<DataTypeConverter>();
         services.AddSingleton<IDeterministicIdGenerator, DeterministicIdGenerator>();
         services.AddScoped<AuditDiffBuilder>();
-        services.AddScoped<IAuditService, Core.Auditing.AuditService>();
+        services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<AuditWriter>();
         services.AddScoped<IAuditOutboxService, AuditOutboxService>();
         services.AddHostedService<AuditOutboxBackgroundService>();
-        services.AddScoped<IProcessService, Core.Processing.ProcessService>();
+        services.AddScoped<IProcessService, CoreProcessService>();
         services.AddScoped<IValidationService, ValidationService>();
 
         // Main entry point.
         services.AddScoped<DataEngine>();
+
+        // Auto-create master tables on first use via warm-up service
+        services.AddHostedService<DataEngineWarmupService>();
 
         return services;
     }

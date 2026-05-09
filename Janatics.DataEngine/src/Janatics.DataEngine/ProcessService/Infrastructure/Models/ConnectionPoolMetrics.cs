@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Janatics.DataEngine.Infrastructure.Models;
+namespace Janatics.DataEngine.ProcessService.Infrastructure.Models;
 
 /// <summary>
 /// Represents detailed connection pool metrics for monitoring and analytics

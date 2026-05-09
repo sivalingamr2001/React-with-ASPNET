@@ -1,7 +1,7 @@
-using Janatics.DataEngine.Models.Audit;
+using Janatics.DataEngine.ProcessService.Models.Audit;
 using System.Data;
 
-namespace Janatics.DataEngine.Abstractions;
+namespace Janatics.DataEngine.ProcessService.Abstractions;
 
 public interface IAuditOutboxService
 {

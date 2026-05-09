@@ -1,7 +1,7 @@
-using Janatics.DataEngine.FieldMapper.Model;
+using Janatics.DataEngine.ProcessService.FieldMapper.Model;
 using System.Data;
 
-namespace Janatics.DataEngine.Abstractions
+namespace Janatics.DataEngine.ProcessService.Abstractions
 {
     /// <summary>
     /// Service interface for validating transaction data against validation rules

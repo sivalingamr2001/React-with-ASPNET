@@ -1,6 +1,6 @@
-using Janatics.DataEngine.Abstractions;
+using Janatics.DataEngine.ProcessService.Abstractions;
 
-namespace Janatics.DataEngine.Core.Processing;
+namespace Janatics.DataEngine.ProcessService.Core.Processing;
 
 public sealed class DeterministicIdGenerator : IDeterministicIdGenerator
 {

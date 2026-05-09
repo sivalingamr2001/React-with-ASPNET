@@ -1,7 +1,7 @@
-using Janatics.DataEngine.Infrastructure.Models;
-using Janatics.DataEngine.Models.Metadata;
+using Janatics.DataEngine.ProcessService.Infrastructure.Models;
+using Janatics.DataEngine.ProcessService.Models.Metadata;
 
-namespace Janatics.DataEngine.Abstractions;
+namespace Janatics.DataEngine.ProcessService.Abstractions;
 
 public interface IProviderCapabilityRegistry
 {

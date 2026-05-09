@@ -1,4 +1,4 @@
-﻿namespace Janatics.DataEngine.AuditService.Interface;
+﻿namespace Janatics.DataEngine.ProcessService.AuditService.Interface;
 
 public class TableMetadata
 {

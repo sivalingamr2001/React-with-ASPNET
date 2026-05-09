@@ -1,12 +1,12 @@
-using Janatics.DataEngine.Abstractions;
-using Janatics.DataEngine.Core.Auditing;
-using Janatics.DataEngine.FieldMapper.Model;
+using Janatics.DataEngine.ProcessService.Abstractions;
+using Janatics.DataEngine.ProcessService.Core.Auditing;
+using Janatics.DataEngine.ProcessService.FieldMapper.Model;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Data;
 using System.Text.RegularExpressions;
 
-namespace Janatics.DataEngine.Core.Processing
+namespace Janatics.DataEngine.ProcessService.Core.Processing
 {
     /// <summary>
     /// Service for validating transaction data against validation rules stored in ValidationConfigs table

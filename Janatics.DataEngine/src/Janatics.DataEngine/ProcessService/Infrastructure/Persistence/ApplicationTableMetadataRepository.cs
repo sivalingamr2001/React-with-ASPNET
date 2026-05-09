@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 using System.Data;
 
-namespace Janatics.DataEngine.Infrastructure.Persistence
+namespace Janatics.DataEngine.ProcessService.Infrastructure.Persistence
 {
     /// <summary>
     /// Repository for retrieving table metadata from public.applicationtable
